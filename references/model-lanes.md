@@ -6,12 +6,19 @@ The concrete model IDs below are current example defaults, not universal require
 
 ## Fast lane
 
-Default:
+Preferred when the Codex host and account expose it:
+
+- Model: gpt-5.3-codex-spark
+- Reasoning effort: low
+
+Fallback:
 
 - Model: gpt-5.6-luna
 - Reasoning effort: low
 
 Use for repository search, symbol mapping, log classification, large-input triage, formatting review, and other bounded read-heavy work.
+
+Some native spawn surfaces do not accept Spark as an explicit per-call model even when the Codex product exposes Spark. After a successful capability probe, configure Spark as agents.default_subagent_model and omit the per-call model only for fast-lane children. Start a new parent task after changing config because existing tasks may reapply their live parent model override.
 
 ## Bounded implementation lane
 
@@ -47,6 +54,7 @@ Use the frontier lane for fresh final review when independent review is a requir
 ## Routing evidence and fallback
 
 - Pass model and reasoning explicitly when supported.
+- For a verified Spark default, confirm the child turn_context model before reporting that the fast lane used Spark.
 - Prefer a fresh context for every independent review and each unrelated implementation slice.
 - If the runtime omits model evidence, report the selected role and the evidence gap rather than asserting a model identity.
 - Fast and standard lanes may inherit the parent after an unavailable-model failure when the cost or behavior change is disclosed.

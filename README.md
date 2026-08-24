@@ -36,7 +36,7 @@ The remaining files support that skill:
 - A native spawn surface that can return child thread IDs.
 - Access to the selected models when explicit model routing is used.
 
-Model IDs in this repository are example defaults for current GPT-5.6 Codex environments. The skill requires the capability class, not one permanent model generation.
+Model IDs in this repository are example defaults for current Codex environments. The skill requires the capability class, not one permanent model generation.
 
 ## Install
 
@@ -65,12 +65,32 @@ The repository does not modify AGENTS.md automatically.
 
 ## Model lanes
 
-- Fast exploration: GPT-5.6 Luna with low reasoning when available.
+- Fast exploration: GPT-5.3-Codex-Spark with low reasoning when available, then GPT-5.6 Luna/low fallback.
 - Fully specified bounded implementation: GPT-5.6 Luna with max reasoning when available.
 - Judgment-heavy implementation and debugging: GPT-5.6 Terra with high reasoning when available.
 - Architecture, security, conflict resolution, and fresh final review: GPT-5.6 Sol with high or xhigh reasoning when available.
 
 Noncritical lanes may use an available equivalent when the preferred model is unavailable. A required independent frontier review must not silently pass through fallback.
+
+### Optional Spark default
+
+Some Codex hosts expose GPT-5.3-Codex-Spark as a product model but do not accept it in the native spawn tool's per-call model field. After confirming that the account can run Spark, configure it as the default for children that omit a model override:
+
+    [agents]
+    default_subagent_model = "gpt-5.3-codex-spark"
+    default_subagent_reasoning_effort = "low"
+
+CCC omits the model override only for the fast lane. Luna, Terra, and Sol lanes remain explicit. Start a new Codex task after changing this setting, then confirm the child session metadata before claiming Spark was used.
+
+### Local A/B observation
+
+On 2026-08-24, a single disposable two-file read-only fixture was run through native Spark/low and Luna/low children with the same task packet:
+
+- Spark: about 15.5 seconds, 227,291 total tokens.
+- Luna: about 34.6 seconds, 187,641 total tokens.
+- Both found the same core behavioral issues and preserved the requirement-evidence caveat.
+
+This is a capability check, not a general benchmark. It supports Spark as a fast-read preference while showing that faster wall time did not mean fewer tokens in this run.
 
 ## Safety boundaries
 

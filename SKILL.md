@@ -50,12 +50,14 @@ Read references/routing.md when the route is not obvious or the task is broad, r
 
 Read references/model-lanes.md before spawning children. Use explicit model and reasoning settings when the native spawn surface supports them.
 
-- Fast exploration: Luna with low effort when available.
+- Fast exploration: GPT-5.3-Codex-Spark with low effort when the host exposes it; otherwise Luna with low effort.
 - Bounded, fully specified implementation: Luna with max effort when available.
 - Judgment-heavy implementation, integration, or debugging: Terra with high effort when available.
 - Architecture, security, conflict resolution, and fresh final review: Sol with high or xhigh effort when available.
 
 If a requested model or effort is unavailable, do not claim it was used. A noncritical lane may inherit the parent with a disclosed routing change. A required independent frontier review remains unavailable rather than silently passing.
+
+When the native spawn schema does not accept Spark as a per-call model override, a verified agents.default_subagent_model may provide the Spark fast lane. In that case, omit the model override only for fast-lane children and explicitly route every other lane. Confirm the child's resolved model from runtime metadata before claiming Spark.
 
 ## Verify and accept
 
