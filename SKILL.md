@@ -57,7 +57,7 @@ Read references/model-lanes.md before spawning children. Use explicit model and 
 
 If a requested model or effort is unavailable, do not claim it was used. A noncritical lane may inherit the parent with a disclosed routing change. A required independent frontier review remains unavailable rather than silently passing.
 
-When the native spawn schema does not accept Spark as a per-call model override, a verified agents.default_subagent_model may provide the Spark fast lane. In that case, omit the model override only for fast-lane children and explicitly route every other lane. Confirm the child's resolved model from runtime metadata before claiming Spark.
+Prefer an explicit Spark model and low reasoning on each fast-lane spawn. Confirm the child's resolved model from runtime metadata before claiming Spark. If a host rejects explicit Spark routing, fall back to explicit Luna/low rather than changing the global subagent default silently.
 
 ## Verify and accept
 

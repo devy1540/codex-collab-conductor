@@ -72,15 +72,16 @@ The repository does not modify AGENTS.md automatically.
 
 Noncritical lanes may use an available equivalent when the preferred model is unavailable. A required independent frontier review must not silently pass through fallback.
 
-### Optional Spark default
+### Spark routing
 
-Some Codex hosts expose GPT-5.3-Codex-Spark as a product model but do not accept it in the native spawn tool's per-call model field. After confirming that the account can run Spark, configure it as the default for children that omit a model override:
+CCC prefers explicit per-call routing for the fast lane:
 
-    [agents]
-    default_subagent_model = "gpt-5.3-codex-spark"
-    default_subagent_reasoning_effort = "low"
+    model = "gpt-5.3-codex-spark"
+    reasoning_effort = "low"
 
-CCC omits the model override only for the fast lane. Luna, Terra, and Sol lanes remain explicit. Start a new Codex task after changing this setting, then confirm the child session metadata before claiming Spark was used.
+Confirm the child session metadata before claiming Spark was used. If the host rejects explicit Spark routing, retry that noncritical lane once with explicit GPT-5.6 Luna/low and disclose the fallback.
+
+Avoid setting Spark as the global default subagent model unless all other workflows explicitly route their children. A global default can unintentionally send unrelated reviewers or implementers from other skills to Spark/low.
 
 ### Local A/B observation
 
