@@ -1,0 +1,6 @@
+interface:
+  display_name: "Codex Collaboration Conductor"
+  short_description: "Native subagent와 모델 레인을 자동 조율"
+  default_prompt: "Use $codex-collab-conductor to coordinate this task with native subagents when delegation materially improves speed or correctness."
+policy:
+  allow_implicit_invocation: true
