@@ -14,6 +14,8 @@ The primary agent always owns:
 
 Child self-review and test reports do not replace parent evidence.
 
+Before accepting non-solo work, verify that every required lane's final state is SUCCEEDED and that its final valid attempt contains a child ID and runtime routing evidence. Preserve earlier failed attempts as history.
+
 ## Independent review
 
 Run after implementation and parent verification. Give the reviewer a fresh context containing:
@@ -34,6 +36,8 @@ Use only for broad or high-risk work:
 - Architecture lane: boundaries, interfaces, coupling, migration risk, long-term tradeoffs.
 
 The primary agent adjudicates disagreements and verifies any accepted finding before changing code.
+
+If a required frontier reviewer cannot spawn or complete, mark the deliverable NOT_VERIFIED. Do not replace it with a lower-capability reviewer or parent self-review while claiming the independent gate passed.
 
 ## Correction loop
 

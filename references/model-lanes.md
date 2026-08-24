@@ -18,7 +18,7 @@ Fallback:
 
 Use for repository search, symbol mapping, log classification, large-input triage, formatting review, and other bounded read-heavy work.
 
-Prefer explicit Spark/low on each fast-lane spawn. If the host rejects that model, retry the noncritical lane once with explicit Luna/low and disclose the fallback. Do not change the global subagent default merely to obtain Spark because unrelated skills may omit their model and be routed to Spark unintentionally.
+Prefer explicit Spark/low on each fast-lane spawn. If the host rejects that model with model_unavailable, retry the noncritical lane at most once with explicit Luna/low and disclose the fallback. Do not change the global subagent default merely to obtain Spark because unrelated skills may omit their model and be routed to Spark unintentionally. Follow fallback-states.md for all other causes.
 
 ## Bounded implementation lane
 
@@ -57,5 +57,5 @@ Use the frontier lane for fresh final review when independent review is a requir
 - Confirm the child turn_context model before reporting that the fast lane used Spark.
 - Prefer a fresh context for every independent review and each unrelated implementation slice.
 - If the runtime omits model evidence, report the selected role and the evidence gap rather than asserting a model identity.
-- Fast and standard lanes may inherit the parent after an unavailable-model failure when the cost or behavior change is disclosed.
+- Do not inherit the parent model as an automatic fallback. Follow fallback-states.md; only Spark model_unavailable permits an automatic Luna/low retry.
 - A required frontier review does not pass through silent fallback.

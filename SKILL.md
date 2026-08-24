@@ -37,6 +37,7 @@ Read references/routing.md when the route is not obvious or the task is broad, r
 - Do not use delegation to avoid understanding the task or reading critical code.
 - Do not ask children to recursively orchestrate. They report blockers, conflicts, scope expansion, and recommended handoffs upward.
 - Do not make the primary agent duplicate work assigned to an active child.
+- Track every non-solo lane using references/fallback-states.md and retain one lane receipt with immutable spawn-attempt history.
 
 ## Use proportional concurrency
 
@@ -55,9 +56,13 @@ Read references/model-lanes.md before spawning children. Use explicit model and 
 - Judgment-heavy implementation, integration, or debugging: Terra with high effort when available.
 - Architecture, security, conflict resolution, and fresh final review: Sol with high or xhigh effort when available.
 
-If a requested model or effort is unavailable, do not claim it was used. A noncritical lane may inherit the parent with a disclosed routing change. A required independent frontier review remains unavailable rather than silently passing.
+If a requested model or effort is unavailable, do not claim it was used. The only automatic cross-model fallback is Spark/low to Luna/low after an explicit model_unavailable failure. Other lanes require an evidence-backed declared reroute. A required independent frontier review remains unavailable rather than silently passing.
 
-Prefer an explicit Spark model and low reasoning on each fast-lane spawn. Confirm the child's resolved model from runtime metadata before claiming Spark. If a host rejects explicit Spark routing, fall back to explicit Luna/low rather than changing the global subagent default silently.
+Prefer an explicit Spark model and low reasoning on each fast-lane spawn. Confirm the child's resolved model from runtime metadata before claiming Spark. If the host reports model_unavailable for explicit Spark routing, fall back to explicit Luna/low rather than changing the global subagent default silently.
+
+When local Codex rollout files are available, use scripts/inspect_child_runtime.py with the exact child thread ID to obtain allowlisted routing evidence. Never inspect or expose transcript content merely to prove model identity.
+
+Before accepting completed non-solo work, validate each lane receipt with scripts/validate_lane_receipt.py and the complete route with scripts/validate_route_manifest.py when local script execution is available.
 
 ## Verify and accept
 
@@ -66,6 +71,7 @@ Prefer an explicit Spark model and low reasoning on each fast-lane spawn. Confir
 - Inspect the complete repository diff and changed-file scope.
 - Rerun the smallest checks that directly prove the acceptance criteria, then broader checks when the claim requires them.
 - Reconcile conflicting child findings explicitly.
+- Accept a non-solo route only when every required lane's final state is SUCCEEDED and its final valid attempt has routing evidence. Earlier failed attempts remain history and do not invalidate a successful permitted fallback. A required frontier review failure leaves the deliverable NOT_VERIFIED.
 - For behaviorally read-only reviewers, capture repository state before and after review; any mutation invalidates that review.
 - Follow references/assurance.md for high-risk review gates and correction loops.
 

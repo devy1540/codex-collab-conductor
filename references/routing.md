@@ -36,6 +36,8 @@ Execution contract:
 4. Wait for the confirmed children.
 5. If spawning fails, do not replace the missing lane with an empty wait or claim parallel execution.
 
+If capacity is lower than the requested lane count, keep unstarted lanes PENDING, wait only for active child IDs, and dispatch the next bounded batch after capacity is released. Follow fallback-states.md for receipts and terminal states.
+
 ### delegated-build
 
 Use one writer when the objective, owned files, interfaces, constraints, and verification are complete enough that the child should not invent product or architecture decisions.

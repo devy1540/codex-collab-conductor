@@ -36,6 +36,8 @@ RETURN
 
 Require a concise report containing findings or changes, evidence, verification results, assumptions, blockers, and recommended handoffs.
 
+For non-solo work, let the parent attach a completed lane receipt containing route_id, nullable supersedes_route_id, parent_thread_id, the lane's final state, verification outcome, fallback_used, and immutable attempt history with cause, child_id, turn_id, requested_model, resolved_model, and reasoning_effort. The child must not infer fields that only the parent runtime can observe.
+
 ## Explorer
 
 - Read-only.

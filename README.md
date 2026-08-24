@@ -16,7 +16,7 @@ It keeps simple work simple and adds proportional orchestration only when the ta
 
 CCC does not require custom agent TOML files, MCP servers, tmux, a daemon, or an external orchestration runtime.
 
-## One skill, four references
+## One skill, supporting resources
 
 This repository contains one actual skill:
 
@@ -29,6 +29,11 @@ The remaining files support that skill:
 - references/model-lanes.md: Luna, Terra, and Sol example defaults by capability.
 - references/task-packets.md: self-contained native child briefs.
 - references/assurance.md: parent verification and fresh-review gates.
+- references/fallback-states.md: deterministic spawn, failure, and fallback receipts.
+- scripts/inspect_child_runtime.py: allowlisted child model and reasoning evidence.
+- scripts/validate_lane_receipt.py: deterministic completed-lane receipt validation.
+- scripts/validate_route_manifest.py: route-level child independence and reroute validation.
+- tests/: standard-library regression tests for runtime inspection and policy contracts.
 
 ## Requirements
 
@@ -70,7 +75,7 @@ The repository does not modify AGENTS.md automatically.
 - Judgment-heavy implementation and debugging: GPT-5.6 Terra with high reasoning when available.
 - Architecture, security, conflict resolution, and fresh final review: GPT-5.6 Sol with high or xhigh reasoning when available.
 
-Noncritical lanes may use an available equivalent when the preferred model is unavailable. A required independent frontier review must not silently pass through fallback.
+The only automatic cross-model fallback is Spark/low to Luna/low after an explicit model_unavailable failure. Other lanes require an evidence-backed declared reroute. A required independent frontier review must not silently pass through fallback.
 
 ### Spark routing
 
@@ -79,9 +84,48 @@ CCC prefers explicit per-call routing for the fast lane:
     model = "gpt-5.3-codex-spark"
     reasoning_effort = "low"
 
-Confirm the child session metadata before claiming Spark was used. If the host rejects explicit Spark routing, retry that noncritical lane once with explicit GPT-5.6 Luna/low and disclose the fallback.
+Confirm the child session metadata before claiming Spark was used. If the host reports model_unavailable for explicit Spark routing, retry that noncritical lane once with explicit GPT-5.6 Luna/low and disclose the fallback.
 
 Avoid setting Spark as the global default subagent model unless all other workflows explicitly route their children. A global default can unintentionally send unrelated reviewers or implementers from other skills to Spark/low.
+
+## Inspect child routing
+
+When local Codex rollout files are available, inspect one exact child thread:
+
+    python3 scripts/inspect_child_runtime.py <child-thread-id>
+
+Use a non-default session root when needed:
+
+    python3 scripts/inspect_child_runtime.py <child-thread-id> \
+      --sessions-dir /absolute/path/to/sessions
+
+The inspector emits only allowlisted thread and turn IDs, a completion flag, depth, a known CCC model ID, and a known reasoning effort. It never outputs agent paths, prompts, messages, tool arguments, command output, environment variables, or token contents.
+
+## Failure receipts
+
+CCC separates attempt state, logical lane state, and route state. Spark receives one model_unavailable fallback attempt to Luna. Earlier failed attempts remain in the lane receipt, while acceptance depends on each required lane's final valid attempt. Required frontier review has no lower-capability fallback and remains NOT_VERIFIED when unavailable.
+
+Validate a completed lane receipt against actual child rollouts:
+
+    python3 scripts/validate_lane_receipt.py /path/to/lane-receipt.json
+
+Use a non-default session root when needed:
+
+    python3 scripts/validate_lane_receipt.py /path/to/lane-receipt.json \
+      --sessions-dir /absolute/path/to/sessions
+
+The validator rejects fake child IDs, parent/model/effort mismatches, unauthorized capability routes, and invalid fallback histories.
+
+Validate a complete route manifest:
+
+    python3 scripts/validate_route_manifest.py /path/to/route-manifest.json
+
+For a declared reroute, bind the terminal previous route:
+
+    python3 scripts/validate_route_manifest.py /path/to/new-route.json \
+      --superseded-manifest /path/to/previous-route.json
+
+The route validator rejects duplicate child ownership across independent lanes, required-lane mismatches, incorrect route state, and unbound reroute claims. Reroutes must name the failed bounded lane in `replaces_lane`, retain every other required lane at the same capability, and use fresh child evidence.
 
 ### Local A/B observation
 
@@ -109,6 +153,12 @@ The skill is validated with the Codex skill creator validator:
 
     uv run --no-project --with pyyaml python \
       "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" .
+
+Run the repository tests:
+
+    python3 -m unittest discover -s tests -v
+
+GitHub Actions runs compile and unit-test checks on pushes to main and pull requests. Static tests verify policy structure and the inspector's security boundary; they do not prove live Codex runtime behavior.
 
 ## Design inspiration
 
