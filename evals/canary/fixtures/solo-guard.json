@@ -1,0 +1,18 @@
+{
+  "fixture_version": "ccc-native-canary-fixture-v1",
+  "scenario_id": "solo-guard",
+  "data_classification": "synthetic-public",
+  "mode": "read-only",
+  "task_shape": {
+    "work_size": "small",
+    "independent_questions": 0,
+    "shared_mutable_state": false,
+    "tightly_coupled": true
+  },
+  "expected": {
+    "execution_route": "solo",
+    "assurance": "parent-check",
+    "native_children": 0,
+    "task_result": "PASS"
+  }
+}

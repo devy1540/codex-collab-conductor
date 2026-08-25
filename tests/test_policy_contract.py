@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import copy
+import hashlib
+import json
 import re
+import runpy
 import unittest
 from pathlib import Path
 
@@ -21,9 +25,174 @@ class PolicyContractTests(unittest.TestCase):
             "scripts/inspect_child_runtime.py",
             "scripts/validate_lane_receipt.py",
             "scripts/validate_route_manifest.py",
+            "scripts/validate_canary_results.py",
         ]
         for relative in required:
             self.assertTrue((ROOT / relative).is_file(), relative)
+
+    def test_canary_package_is_complete_and_synthetic(self) -> None:
+        canary = ROOT / "evals" / "canary"
+        required = [
+            "README.md",
+            "playbook.md",
+            "result-schema.json",
+            "result-template.json",
+            "fixtures/solo-guard.json",
+            "fixtures/parallel-read.json",
+            "fixtures/fast-route-fallback.json",
+            "fixtures/host-default-judgment.json",
+            "fixtures/frontier-seeded-defect-review.json",
+        ]
+        for relative in required:
+            self.assertTrue((canary / relative).is_file(), relative)
+
+        schema = json.loads((canary / "result-schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(schema["$id"], "ccc-native-canary-result-v1")
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(
+            set(schema["required"]),
+            {
+                "schema_version",
+                "scenario_id",
+                "fixture_sha256",
+                "route",
+                "expected_child_count",
+                "observed_child_count",
+                "children_distinct",
+                "worktree_unchanged",
+                "requested_model",
+                "resolved_model",
+                "requested_effort",
+                "resolved_effort",
+                "fallback",
+                "failure_class",
+                "verification",
+                "task_result",
+                "wall_time_ms",
+                "parent_rework",
+            },
+        )
+        scenario_ids = set(schema["properties"]["scenario_id"]["enum"])
+        fixture_ids = set()
+        for fixture in sorted((canary / "fixtures").glob("*.json")):
+            payload = json.loads(fixture.read_text(encoding="utf-8"))
+            fixture_ids.add(payload["scenario_id"])
+            self.assertEqual(payload["data_classification"], "synthetic-public")
+            self.assertEqual(payload["mode"], "read-only")
+            text = fixture.read_text(encoding="utf-8")
+            self.assertNotIn("/Users/", text)
+            self.assertNotIn("child_id", text)
+        self.assertEqual(fixture_ids, scenario_ids)
+
+        template = json.loads((canary / "result-template.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(template), set(schema["properties"]))
+        self.assertIsNone(template["scenario_id"])
+        for forbidden in ["prompt", "child_id", "turn_id", "local_path", "transcript"]:
+            self.assertNotIn(forbidden, schema["properties"])
+
+        fixture_hashes = {
+            path.stem: hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in (canary / "fixtures").glob("*.json")
+        }
+        results = sorted((canary / "results").glob("*.json"))
+        self.assertEqual(len(results), len(scenario_ids))
+        observed_results = set()
+        by_scenario = {}
+        for result_path in results:
+            payload = json.loads(result_path.read_text(encoding="utf-8"))
+            self.assertEqual(set(payload), set(schema["properties"]))
+            scenario = payload["scenario_id"]
+            observed_results.add(scenario)
+            by_scenario[scenario] = payload
+            self.assertEqual(payload["fixture_sha256"], fixture_hashes[scenario])
+            self.assertTrue(payload["worktree_unchanged"])
+            self.assertEqual(payload["task_result"], "PASS")
+            self.assertEqual(payload["observed_child_count"], payload["expected_child_count"])
+            text = result_path.read_text(encoding="utf-8")
+            for forbidden in ["/Users/", "child_id", "turn_id", "prompt", "transcript"]:
+                self.assertNotIn(forbidden, text)
+        self.assertEqual(observed_results, scenario_ids)
+        solo = by_scenario["solo-guard"]
+        self.assertEqual((solo["expected_child_count"], solo["observed_child_count"]), (0, 0))
+        self.assertIsNone(solo["children_distinct"])
+        self.assertEqual(solo["verification"], "NOT_VERIFIED")
+
+        parallel = by_scenario["parallel-read"]
+        self.assertEqual(
+            (parallel["expected_child_count"], parallel["observed_child_count"]),
+            (2, 2),
+        )
+        self.assertTrue(parallel["children_distinct"])
+
+        fast = by_scenario["fast-route-fallback"]
+        self.assertEqual((fast["expected_child_count"], fast["observed_child_count"]), (1, 1))
+        self.assertIsNone(fast["children_distinct"])
+        self.assertEqual(fast["fallback"], "spark_to_luna")
+        self.assertEqual(fast["failure_class"], "quota_denied")
+
+        judgment = by_scenario["host-default-judgment"]
+        self.assertEqual(judgment["route"], "standard")
+        self.assertEqual(judgment["requested_model"], "host-default")
+        self.assertEqual(judgment["requested_effort"], "host-default")
+        self.assertEqual(judgment["fallback"], "none")
+        self.assertEqual(judgment["failure_class"], "none")
+
+        frontier = by_scenario["frontier-seeded-defect-review"]
+        self.assertEqual(frontier["route"], "frontier")
+        self.assertEqual(frontier["requested_model"], "gpt-5.6-sol")
+        self.assertEqual(frontier["resolved_model"], "gpt-5.6-sol")
+        self.assertEqual(frontier["requested_effort"], "high")
+        self.assertEqual(frontier["resolved_effort"], "high")
+        self.assertEqual(frontier["fallback"], "none")
+
+        validate_semantics = runpy.run_path(
+            str(ROOT / "scripts" / "validate_canary_results.py")
+        )["validate_semantics"]
+        for payload in by_scenario.values():
+            validate_semantics(payload)
+
+        invalid_fast = copy.deepcopy(fast)
+        invalid_fast["route"] = "solo"
+        with self.assertRaises(ValueError):
+            validate_semantics(invalid_fast)
+
+        invalid_frontier = copy.deepcopy(frontier)
+        invalid_frontier["verification"] = "NOT_VERIFIED"
+        with self.assertRaises(ValueError):
+            validate_semantics(invalid_frontier)
+
+        leaked_identifier = copy.deepcopy(parallel)
+        leaked_identifier["resolved_model"] = "00000000-0000-0000-0000-000000000000"
+        with self.assertRaises(ValueError):
+            validate_semantics(leaked_identifier)
+
+    def test_model_policy_is_the_only_concrete_route_source(self) -> None:
+        model_policy = (ROOT / "references/model-lanes.md").read_text(encoding="utf-8")
+        self.assertIn("gpt-5.3-codex-spark", model_policy)
+        self.assertIn("gpt-5.6-luna", model_policy)
+        self.assertIn("gpt-5.6-sol", model_policy)
+        self.assertIn("host default", model_policy)
+        self.assertIn("pre-child", model_policy)
+        self.assertIn("NOT_VERIFIED", model_policy)
+        self.assertIn("xhigh", model_policy)
+
+        concrete_models = (
+            "gpt-5.3-codex-spark",
+            "gpt-5.6-luna",
+            "gpt-5.6-terra",
+            "gpt-5.6-sol",
+        )
+        for relative in [
+            "README.md",
+            "SKILL.md",
+            "references/routing.md",
+            "references/fallback-states.md",
+            "references/assurance.md",
+            "references/task-packets.md",
+        ]:
+            content = (ROOT / relative).read_text(encoding="utf-8")
+            for model in concrete_models:
+                self.assertNotIn(model, content, f"{model} duplicated in {relative}")
 
     def test_skill_frontmatter_and_implicit_policy(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
@@ -31,12 +200,17 @@ class PolicyContractTests(unittest.TestCase):
         self.assertRegex(skill, r"(?s)^---\nname: codex-collab-conductor\n")
         self.assertRegex(skill, r"(?m)^description: .+")
         self.assertIn("allow_implicit_invocation: true", metadata)
+        self.assertIn("at least two independent lanes", skill)
+        self.assertIn("more specific skill", skill)
+        self.assertIn("bounded implementation followed by a deferred fresh second opinion", metadata)
 
     def test_spawn_and_wait_invariants(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         routing = (ROOT / "references/routing.md").read_text(encoding="utf-8")
         self.assertIn("Do not call wait with an empty target list", skill)
         self.assertIn("before any task-specific file read", skill)
+        self.assertIn("execution lane", skill)
+        self.assertRegex(skill, r"after\s+implementation and parent verification")
         self.assertIn("Confirm a non-empty child ID", routing)
 
     def test_model_and_fallback_contract(self) -> None:

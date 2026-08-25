@@ -1,0 +1,20 @@
+{
+  "fixture_version": "ccc-native-canary-fixture-v1",
+  "scenario_id": "host-default-judgment",
+  "data_classification": "synthetic-public",
+  "mode": "read-only",
+  "integration_facts": {
+    "service_a_contract": "emits one event per accepted item",
+    "service_b_contract": "deduplicates by item key",
+    "observed_condition": "retries may deliver the same item twice"
+  },
+  "expected_decision": "preserve the item key across retries and verify idempotency at the boundary",
+  "route_policy": {
+    "execution_route": "standard",
+    "model_request": "host-default",
+    "named_model_claim_allowed": false
+  },
+  "expected": {
+    "task_result": "PASS"
+  }
+}

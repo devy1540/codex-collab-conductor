@@ -34,9 +34,19 @@ Provide acceptance criteria and commands or observable checks that prove them.
 
 RETURN
 
-Require a concise report containing findings or changes, evidence, verification results, assumptions, blockers, and recommended handoffs.
+Require a concise report containing findings or changes, evidence, verification results, assumptions, blockers, and recommended handoffs. The report is a work product for the parent, not an acceptance verdict.
 
-For non-solo work, let the parent attach a completed lane receipt containing route_id, nullable supersedes_route_id, parent_thread_id, the lane's final state, verification outcome, fallback_used, and immutable attempt history with cause, child_id, turn_id, requested_model, resolved_model, and reasoning_effort. The child must not infer fields that only the parent runtime can observe.
+Choose task shape and assurance before model routing. The child packet should not invent a
+concrete model or claim a resolved model; follow `references/model-lanes.md` and let the
+parent own that choice.
+
+For non-solo work, the parent may attach an optional v1 lane receipt containing
+route_id, nullable supersedes_route_id, parent_thread_id, the lane's final state,
+verification outcome, fallback_used, and immutable attempt history with cause, child_id,
+turn_id, requested_model, resolved_model, and reasoning_effort. Omit the receipt when
+routing diagnostics are not needed. The child must not infer fields that only the parent
+runtime can observe. A receipt marked `VERIFIED` proves routing evidence only, not task
+correctness.
 
 ## Explorer
 

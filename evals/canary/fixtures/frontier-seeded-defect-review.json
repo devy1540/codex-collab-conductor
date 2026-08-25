@@ -1,0 +1,21 @@
+{
+  "fixture_version": "ccc-native-canary-fixture-v1",
+  "scenario_id": "frontier-seeded-defect-review",
+  "data_classification": "synthetic-public",
+  "mode": "read-only",
+  "contract": "Return the first positive integer, or null when no positive integer exists.",
+  "language": "python",
+  "snippet": "def first_positive(values):\n    return next(value for value in values if value > 0)\n",
+  "seeded_defect": "The implementation raises StopIteration for an empty or all-non-positive input instead of returning null.",
+  "route_policy": {
+    "execution_route": "frontier",
+    "model_request": "explicit-sol",
+    "reasoning_effort": "high",
+    "xhigh_requires_concrete_need": true,
+    "required_model_unavailable": "NOT_VERIFIED_WITHOUT_DOWNGRADE"
+  },
+  "expected": {
+    "review_finding": "identify the missing empty-result behavior",
+    "task_result": "PASS"
+  }
+}

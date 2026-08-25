@@ -1,6 +1,6 @@
 interface:
   display_name: "Codex Collaboration Conductor"
-  short_description: "Native subagent와 모델 레인을 자동 조율"
-  default_prompt: "Use $codex-collab-conductor to coordinate this task with native subagents when delegation materially improves speed or correctness."
+  short_description: "Bounded native collaboration with parent acceptance"
+  default_prompt: "Use $codex-collab-conductor when this task has at least two independent native-subagent lanes or needs bounded implementation followed by a deferred fresh second opinion; keep final acceptance with the parent."
 policy:
   allow_implicit_invocation: true

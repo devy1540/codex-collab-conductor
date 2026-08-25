@@ -1,47 +1,53 @@
 # Codex Collaboration Conductor
 
-Codex Collaboration Conductor (CCC) is a single Codex skill that automatically coordinates native subagents when delegation materially improves speed, correctness, or independent verification.
-
-It keeps simple work simple and adds proportional orchestration only when the task shape justifies it.
+Codex Collaboration Conductor (CCC) is one conservative, implicit Codex skill for
+deciding when native subagents are justified by the task shape. The parent keeps scope,
+integration, verification, and final acceptance ownership. CCC is not a scheduler or
+orchestration service, and it makes no promise of faster execution, task correctness, or
+independent assurance.
 
 ## What it provides
 
-- Direct execution for trivial or tightly coupled work.
-- Parallel native subagents for genuinely independent read-heavy lanes.
-- Bounded implementation delegation with explicit file ownership.
-- Capability-based model lanes for fast, standard, and frontier work.
-- Fresh independent review for high-risk changes.
-- Parent-owned diff inspection, verification reruns, and final acceptance.
-- Hard guards against empty waits, simulated delegation, recursive orchestration, and overlapping writers.
+- A solo guard for small or tightly coupled work.
+- Bounded native read-only and implementation packets when their ownership is explicit.
+- A separate assurance choice: parent verification by default, with an optional fresh
+  second opinion for material risk.
+- Conservative fast/frontier routing and host-default handling for other lanes; see the
+  single detailed policy in `references/model-lanes.md`.
+- Optional privacy-safe runtime diagnostics for high-risk routing and fallback
+  troubleshooting.
 
-CCC does not require custom agent TOML files, MCP servers, tmux, a daemon, or an external orchestration runtime.
+CCC intentionally remains one personal-first skill. It does not add a plugin, MCP
+server, daemon, tmux runtime, custom agent TOML, automatic scheduler, or receipt schema
+v2.
 
-## One skill, supporting resources
+## Repository layout
 
-This repository contains one actual skill:
+The repository contains one actual skill:
 
-- SKILL.md
+- `SKILL.md`
 
-The remaining files support that skill:
+Supporting resources are discoverable from that skill:
 
-- agents/openai.yaml: Codex UI metadata and implicit invocation policy.
-- references/routing.md: solo, parallel-read, delegated-build, and plan-run decisions.
-- references/model-lanes.md: Luna, Terra, and Sol example defaults by capability.
-- references/task-packets.md: self-contained native child briefs.
-- references/assurance.md: parent verification and fresh-review gates.
-- references/fallback-states.md: deterministic spawn, failure, and fallback receipts.
-- scripts/inspect_child_runtime.py: allowlisted child model and reasoning evidence.
-- scripts/validate_lane_receipt.py: deterministic completed-lane receipt validation.
-- scripts/validate_route_manifest.py: route-level child independence and reroute validation.
-- tests/: standard-library regression tests for runtime inspection and policy contracts.
+- `agents/openai.yaml`: Codex UI metadata and implicit invocation policy.
+- `references/routing.md`: execution shape and assurance decisions.
+- `references/model-lanes.md`: the sole detailed model-routing policy.
+- `references/task-packets.md`: self-contained native child briefs.
+- `references/assurance.md`: parent verification and optional fresh-review gates.
+- `references/fallback-states.md`: optional v1 diagnostic state and fallback guidance.
+- `scripts/inspect_child_runtime.py`: allowlisted child routing evidence inspector.
+- `scripts/validate_lane_receipt.py`: v1 lane-diagnostic validator.
+- `scripts/validate_route_manifest.py`: v1 route-diagnostic validator.
+- `evals/canary/`: manual native canary fixtures, playbook, and result materials.
+- `tests/`: standard-library regression tests for policy structure and diagnostic
+  boundaries.
 
 ## Requirements
 
-- A current Codex host with native subagents enabled.
-- A native spawn surface that can return child thread IDs.
-- Access to the selected models when explicit model routing is used.
-
-Model IDs in this repository are example defaults for current Codex environments. The skill requires the capability class, not one permanent model generation.
+- A current Codex host with native subagents enabled when a non-solo route is selected.
+- A native spawn surface that returns child thread IDs for delegated work.
+- Access to an explicitly requested model only when the selected fast or frontier route
+  requires it.
 
 ## Install
 
@@ -54,43 +60,46 @@ Restart Codex if the skill does not appear immediately.
 
 ## Automatic use
 
-agents/openai.yaml enables implicit invocation. Codex can select the skill when the request matches the SKILL.md description, so users do not need to type the skill name on every task.
+`agents/openai.yaml` enables implicit invocation. Codex may select this skill when the
+request matches the conservative policy, so users do not need to type the skill name on
+every task.
 
-For stronger personal routing, add a rule like this to the user-level AGENTS.md:
+One ordinary review, one investigation, and one localized edit remain outside CCC. An
+explicitly invoked or more specific workflow skill leads when it applies; CCC supports it
+only when that workflow actually needs multiple native lanes.
+
+For stronger personal routing, add a rule like this to the user-level `AGENTS.md`:
 
     # Native subagent collaboration
-    - When coding, debugging, research, or review has at least two independent lanes,
-      or when separating implementation from independent verification materially helps,
-      read and apply the codex-collab-conductor skill without requiring explicit invocation.
-    - Skip trivial one-step work and tightly coupled work.
-    - If a non-solo route is selected, spawn real native children before task-specific
-      investigation. Never claim delegation without child IDs and never call an empty wait.
+    - For coding, debugging, research, or review, apply the
+      codex-collab-conductor skill when at least two independent read lanes exist or
+      a bounded implementation and optional fresh review materially clarify acceptance.
+    - Keep trivial one-step and tightly coupled work solo.
+    - For a non-solo route, spawn real native children before task-specific
+      investigation. Require child IDs and never call an empty wait.
 
-The repository does not modify AGENTS.md automatically.
+The repository does not modify `AGENTS.md` automatically.
 
-## Model lanes
+## Model policy
 
-- Fast exploration: GPT-5.3-Codex-Spark with low reasoning when available, then GPT-5.6 Luna/low fallback.
-- Fully specified bounded implementation: GPT-5.6 Luna with max reasoning when available.
-- Judgment-heavy implementation and debugging: GPT-5.6 Terra with high reasoning when available.
-- Architecture, security, conflict resolution, and fresh final review: GPT-5.6 Sol with high or xhigh reasoning when available.
+Task shape and assurance are selected before model routing. The complete, non-duplicated
+policy is in [`references/model-lanes.md`](references/model-lanes.md): explicit routing is
+limited to the fast and frontier lanes; bounded and standard lanes use the host default.
+Do not infer or claim a resolved model without runtime evidence.
 
-The only automatic cross-model fallback is Spark/low to Luna/low after an explicit model_unavailable failure. Other lanes require an evidence-backed declared reroute. A required independent frontier review must not silently pass through fallback.
+## Optional runtime diagnostics
 
-### Spark routing
+Receipts and manifests are optional v1 diagnostics, not required workflow artifacts and
+not evidence that a child solved its task. A v1 `VERIFIED` value means only that the
+allowlisted runtime routing evidence matched the recorded request. It does not establish
+task-result correctness.
 
-CCC prefers explicit per-call routing for the fast lane:
+When diagnostics are needed, the inspector emits only allowlisted thread/turn IDs,
+completion, depth, model, and reasoning metadata. It never emits prompts, child
+transcripts, tool arguments, command output, environment variables, tokens, or agent
+paths.
 
-    model = "gpt-5.3-codex-spark"
-    reasoning_effort = "low"
-
-Confirm the child session metadata before claiming Spark was used. If the host reports model_unavailable for explicit Spark routing, retry that noncritical lane once with explicit GPT-5.6 Luna/low and disclose the fallback.
-
-Avoid setting Spark as the global default subagent model unless all other workflows explicitly route their children. A global default can unintentionally send unrelated reviewers or implementers from other skills to Spark/low.
-
-## Inspect child routing
-
-When local Codex rollout files are available, inspect one exact child thread:
+Inspect one exact child route when local Codex rollout files are available:
 
     python3 scripts/inspect_child_runtime.py <child-thread-id>
 
@@ -99,76 +108,66 @@ Use a non-default session root when needed:
     python3 scripts/inspect_child_runtime.py <child-thread-id> \
       --sessions-dir /absolute/path/to/sessions
 
-The inspector emits only allowlisted thread and turn IDs, a completion flag, depth, a known CCC model ID, and a known reasoning effort. It never outputs agent paths, prompts, messages, tool arguments, command output, environment variables, or token contents.
-
-## Failure receipts
-
-CCC separates attempt state, logical lane state, and route state. Spark receives one model_unavailable fallback attempt to Luna. Earlier failed attempts remain in the lane receipt, while acceptance depends on each required lane's final valid attempt. Required frontier review has no lower-capability fallback and remains NOT_VERIFIED when unavailable.
-
-Validate a completed lane receipt against actual child rollouts:
+The v1 validators remain available for an explicitly requested diagnostic record:
 
     python3 scripts/validate_lane_receipt.py /path/to/lane-receipt.json
-
-Use a non-default session root when needed:
-
-    python3 scripts/validate_lane_receipt.py /path/to/lane-receipt.json \
-      --sessions-dir /absolute/path/to/sessions
-
-The validator rejects fake child IDs, parent/model/effort mismatches, unauthorized capability routes, and invalid fallback histories.
-
-Validate a complete route manifest:
-
     python3 scripts/validate_route_manifest.py /path/to/route-manifest.json
 
-For a declared reroute, bind the terminal previous route:
+If a diagnostic cannot be represented by the existing v1 schema, omit it rather than
+fabricating evidence. Do not treat an omitted diagnostic as proof that routing happened.
 
-    python3 scripts/validate_route_manifest.py /path/to/new-route.json \
-      --superseded-manifest /path/to/previous-route.json
+## Safety and acceptance boundaries
 
-The route validator rejects duplicate child ownership across independent lanes, required-lane mismatches, incorrect route state, and unbound reroute claims. Reroutes must name the failed bounded lane in `replaces_lane`, retain every other required lane at the same capability, and use fresh child evidence.
+- The parent owns intent, architecture, integration, diff inspection, and final checks.
+- Child reports are claims; tests, runtime evidence, and the parent diff are the proof
+  sources available to the parent.
+- One writer is the default. Parallel writers require disjoint ownership and stable
+  interfaces.
+- A reviewer is behaviorally read-only unless an enforced sandbox says otherwise; any
+  mutation invalidates that review.
+- A required frontier route that cannot use its requested Sol route is
+`NOT_VERIFIED`; it is not silently downgraded.
+- Final acceptance is parent diff inspection and relevant test reruns. A fresh
+  second-opinion review is optional and must be re-checked by the parent.
 
-### Local A/B observation
+## Manual native canary
 
-On 2026-08-24, a single disposable two-file read-only fixture was run through native Spark/low and Luna/low children with the same task packet:
+`evals/canary/` is a privacy-safe manual release gate with five deterministic,
+read-only synthetic fixtures: solo guard, parallel read, fast route/fallback,
+host-default judgment, and frontier seeded-defect review. Run one functional execution
+per scenario and record only the fields in the result schema: route, requested model,
+resolved model, task `PASS`/`FAIL`, wall time, parent rework, and verification status.
 
-- Spark: about 15.5 seconds, 227,291 total tokens.
-- Luna: about 34.6 seconds, 187,641 total tokens.
-- Both found the same core behavioral issues and preserved the requirement-evidence caveat.
-
-This is a capability check, not a general benchmark. It supports Spark as a fast-read preference while showing that faster wall time did not mean fewer tokens in this run.
-
-## Safety boundaries
-
-- The primary agent remains responsible for intent, architecture, integration, and acceptance.
-- Child reports are claims, not proof.
-- One writer is the default.
-- Parallel writers require disjoint ownership and stable interfaces.
-- Reviewers are behaviorally read-only unless the host enforces a read-only sandbox.
-- Any reviewer mutation invalidates the review.
-- Corrections require parent re-verification and a new review verdict.
+Do not store prompts, child IDs, local paths, or transcripts in canary results. The
+canary is not simulated in CI. One canary run does not justify a general correctness or
+speed claim. Do not make performance claims until at least five
+repeated comparisons against a solo baseline exist; this repository currently makes no
+such claim.
 
 ## Validation
 
-The skill is validated with the Codex skill creator validator:
+Validate the skill package:
 
     uv run --no-project --with pyyaml python \
       "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" .
 
-Run the repository tests:
+Run repository tests:
 
-    python3 -m unittest discover -s tests -v
+    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 
-GitHub Actions runs compile and unit-test checks on pushes to main and pull requests. Static tests verify policy structure and the inspector's security boundary; they do not prove live Codex runtime behavior.
+Validate committed canary results against their Draft 2020-12 schema:
 
-## Design inspiration
+    uv run --no-project --with 'jsonschema==4.25.1' \
+      python scripts/validate_canary_results.py
 
-CCC is an original workflow inspired by publicly documented ideas from:
+GitHub CI remains static compile, unit-test, CLI, and JSON Schema verification. It does not run the
+native canary or claim live runtime behavior.
 
-- oh-my-codex: bounded delegation, leader ownership, and model lanes.
-- Sol Advisor: selective assurance, Luna/Max bounded implementation, and fresh review.
-- Superpowers: isolated task packets, per-task execution, and review loops.
+## Design boundary and license
 
-See NOTICE.md for links and the attribution boundary.
+CCC is an original workflow informed by publicly documented ideas about bounded
+delegation, leader ownership, capability routing, and isolated task packets. It does not
+require or copy an external orchestration runtime. See `NOTICE.md` for attribution links.
 
 ## License
 

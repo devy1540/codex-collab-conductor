@@ -1,0 +1,26 @@
+{
+  "fixture_version": "ccc-native-canary-fixture-v1",
+  "scenario_id": "parallel-read",
+  "data_classification": "synthetic-public",
+  "mode": "read-only",
+  "questions": [
+    {
+      "lane": "alpha",
+      "operation": "count",
+      "values": [2, 4, 6, 8],
+      "expected": 4
+    },
+    {
+      "lane": "beta",
+      "operation": "sum",
+      "values": [3, 5, 7],
+      "expected": 15
+    }
+  ],
+  "expected": {
+    "execution_route": "parallel-read",
+    "assurance": "parent-check",
+    "native_children": 2,
+    "task_result": "PASS"
+  }
+}

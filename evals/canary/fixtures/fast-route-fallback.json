@@ -1,0 +1,24 @@
+{
+  "fixture_version": "ccc-native-canary-fixture-v1",
+  "scenario_id": "fast-route-fallback",
+  "data_classification": "synthetic-public",
+  "mode": "read-only",
+  "classification": {
+    "values": ["red", "blue", "red", "green", "blue", "red"],
+    "expected": {
+      "red": 3,
+      "blue": 2,
+      "green": 1
+    }
+  },
+  "route_policy": {
+    "primary": "fast",
+    "fallback_trigger": "pre-child-unavailable-or-quota-only",
+    "max_fallback_attempts": 1,
+    "started_child_timeout_or_error_switch": false
+  },
+  "expected": {
+    "execution_route": "fast",
+    "task_result": "PASS"
+  }
+}

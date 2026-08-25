@@ -1,74 +1,94 @@
 # Routing
 
-Choose execution shape and assurance independently.
+Choose the execution shape and assurance independently. Choose both before consulting
+`model-lanes.md`; model selection must not decide whether collaboration is warranted.
+
+CCC is a conservative policy. It makes no claim that delegation is faster, more correct,
+automatically scheduled, or independently assuring. The parent remains responsible for
+the result.
 
 ## Execution route
 
 ### solo
 
-Use when the task is small, tightly coupled, or cheaper to complete directly than to explain and integrate.
+Use when the task is small, tightly coupled, or cheaper to complete directly than to
+explain and integrate.
 
 Typical signals:
 
-- One localized edit or answer.
-- One root cause and one code path.
+- One localized edit or one root cause and code path.
+- No genuinely independent read-only questions.
 - Shared state makes parallel work unsafe.
 - Delegation would repeat the primary agent's required reading.
 
+The solo guard is a valid outcome, not a failed attempt to collaborate.
+
 ### parallel-read
 
-Use when at least two questions can be answered without sharing mutable state.
-
-Good lanes include:
-
-- Repository path or ownership mapping.
-- Independent failure clusters.
-- Documentation versus local implementation.
-- Security, test, and maintainability review of the same read-only diff.
-
-Run as many lanes as are genuinely independent and supported by current capacity. Batch the remainder when capacity is lower than demand.
+Use when at least two questions can be answered without sharing mutable state. Good lanes
+include repository ownership mapping, independent failure clusters, documentation versus
+local implementation, and read-only security or maintainability checks.
 
 Execution contract:
 
 1. Build one self-contained read-only packet per lane.
-2. Spawn every lane before starting primary-thread investigation.
+2. Spawn every selected lane before task-specific investigation.
 3. Confirm a non-empty child ID for each accepted lane.
-4. Wait for the confirmed children.
-5. If spawning fails, do not replace the missing lane with an empty wait or claim parallel execution.
+4. Wait only for confirmed child IDs.
+5. If a spawn fails, do not replace it with an empty wait or claim parallel execution.
 
-If capacity is lower than the requested lane count, keep unstarted lanes PENDING, wait only for active child IDs, and dispatch the next bounded batch after capacity is released. Follow fallback-states.md for receipts and terminal states.
+Do not add parallel lanes merely to reach a fixed child count. Capacity can limit the
+active batch; unstarted work stays pending until the parent can safely dispatch it.
 
 ### delegated-build
 
-Use one writer when the objective, owned files, interfaces, constraints, and verification are complete enough that the child should not invent product or architecture decisions.
+Use one writer when the objective, owned files, interfaces, constraints, and verification
+are complete enough that the child should not invent product or architecture decisions.
 
-Do not delegate implementation when:
-
-- Material requirements remain unresolved.
-- File ownership cannot be bounded.
-- The change requires frequent decisions across shared modules.
-- The primary agent would need to redo the implementation to verify it.
+Do not delegate implementation when material requirements remain unresolved, ownership
+cannot be bounded, shared modules require frequent decisions, or the parent would need to
+redo the implementation to verify it.
 
 ### plan-run
 
-Use for an approved plan with multiple implementation slices. Dispatch a fresh implementer per slice, normally sequentially. Parallelize slices only when ownership and interfaces are disjoint and stable.
-
-For long runs or likely compaction, keep a concise task ledger only when the repository has an approved local scratch convention. Otherwise use the available plan or goal state without creating new repository artifacts.
+Use for an approved plan with multiple implementation packets. Dispatch a fresh
+implementer per slice, normally sequentially. Parallelize only when ownership and
+interfaces are disjoint and stable, and the parent can inspect the accumulated diff.
 
 ## Assurance route
 
 ### parent-check
 
-Default for ordinary work. The primary agent owns diff inspection and verification.
+Default for ordinary work. The parent inspects the complete diff, reruns relevant tests or
+checks, reconciles child findings, and accepts or rejects the result.
 
 ### independent-review
 
-Use for material regression risk, public contracts, authentication, authorization, payments, data integrity, migrations, concurrency, infrastructure, or an explicit independent-review request.
+Optional after implementation and parent verification. Give the fresh reviewer the goal,
+acceptance criteria, accumulated diff, changed-file list, actual check output, constraints,
+and residual risks. Do not substitute the review for parent verification.
+
+The reviewer is not part of the initial execution-lane batch. Spawn it after parent
+verification and before it performs reviewer-specific diff inspection.
 
 ### dual-review
 
-Use only when both implementation correctness and architectural boundaries require independent scrutiny. Run one code-quality/security lane and one architecture/devil's-advocate lane on the same verified diff.
+Use only when both implementation correctness and architecture boundaries need separate
+fresh scrutiny. The parent adjudicates disagreements and verifies every accepted finding.
+
+## Model and diagnostics boundary
+
+After the route is selected, follow `model-lanes.md`. Only its fast and frontier lanes
+permit explicit model routing. Bounded and standard routes use the host default.
+
+Lane receipts and route manifests are optional v1 diagnostics. Use them only when high-risk
+routing evidence, model verification, or fallback troubleshooting justifies the privacy
+and record-keeping cost. Their `VERIFIED` value means runtime routing evidence only; it
+does not prove task-result correctness. No receipt or manifest v2 is part of this policy.
 
 ## Route escalation
 
-Escalate when new evidence reveals wider blast radius, hidden coupling, security sensitivity, or an incorrect initial specification. Do not silently downgrade an assurance level after work starts.
+Escalate when evidence reveals wider blast radius, hidden coupling, security sensitivity,
+or an incorrect initial specification. Declare the route change and its reason. Do not
+silently downgrade assurance, swap a started child to another model, or treat missing
+runtime evidence as a successful route.

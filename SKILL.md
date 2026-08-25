@@ -1,88 +1,83 @@
 ---
 name: codex-collab-conductor
-description: Automatically coordinate Codex native subagents for coding, debugging, research, review, and multi-step repository work when independent lanes, bounded delegation, or fresh verification can materially improve speed or correctness. Apply without requiring explicit invocation when the host permits implicit skill selection. Skip trivial one-step edits, tightly coupled work, and tasks where delegation would add more coordination than value.
+description: Conservative Codex-native collaboration policy for tasks with at least two independent lanes or an explicit need to separate bounded implementation from a fresh second opinion. Keep single reviews, localized edits, and workflows owned by a more specific skill out of scope. The parent keeps scope, integration, and acceptance ownership.
 ---
 
 # Codex Collaboration Conductor
 
-Use Codex native subagents as a proportional execution and assurance layer. Keep the primary agent responsible for intent, scope, integration, and final verification.
+CCC is one implicit skill and a policy, not an orchestration service. Use the smallest
+native collaboration shape that the task actually needs. Keep simple or tightly coupled
+work in the parent. Use children only for bounded packets whose ownership and acceptance
+criteria are explicit.
 
-## Route before delegating
+Do not activate CCC for one ordinary review, one investigation, or one localized edit.
+When another explicitly invoked or more specific skill owns the workflow, let that skill
+lead; CCC may support it only when the owner actually needs multiple native lanes.
 
-Default to direct execution. Select the smallest useful route:
+## Decide the route before the model
 
-- solo: one agent can finish and verify the task directly.
-- parallel-read: two or more independent read-only questions can be investigated concurrently.
-- delegated-build: a complete, bounded implementation packet can be owned by one child.
-- plan-run: an approved multi-task plan has mostly independent implementation slices.
+First choose the execution shape and assurance level. Only then consult
+`references/model-lanes.md` for model routing.
 
-Select assurance separately:
+- `solo`: the parent can inspect, implement, and verify the work directly.
+- `parallel-read`: independent read-only questions can be investigated without shared
+  writes.
+- `delegated-build`: one child owns a complete, bounded implementation packet.
+- `plan-run`: an approved plan has mostly independent implementation packets.
 
-- parent-check: the primary agent inspects the complete diff and reruns relevant checks.
-- independent-review: a fresh child reviews the verified diff without implementation context.
-- dual-review: fresh code and architecture review lanes run concurrently for broad or high-risk changes.
+Choose assurance separately: `parent-check` is the default; an optional fresh
+`independent-review` is appropriate when risk or the acceptance plan calls for it. A
+second opinion is evidence for the parent to evaluate, not automatic assurance.
 
-Read references/routing.md when the route is not obvious or the task is broad, risky, or multi-step.
+## Native delegation boundary
 
-## Delegate with clean context
+For a non-solo execution route, read the selected reference packet and spawn every selected
+execution lane before any task-specific file read or investigation. Require a non-empty child thread ID. Never
+simulate delegation. Do not call wait with an empty target list, or ask a child to recursively
+orchestrate. Keep one writer by default; parallel writers require disjoint ownership and
+stable interfaces.
 
-- Prefer fork_turns set to none so the child receives only its task packet.
-- Use the task packet contract in references/task-packets.md.
-- For every non-solo route, the delegation gate is mandatory: call collaboration.spawn_agent or the exposed native spawn equivalent once per selected lane before any task-specific file read, shell command, browser action, or primary-thread investigation.
-- Issue independent spawn calls together so they can run concurrently.
-- Record the returned child thread IDs. Do not call wait with an empty target list.
-- Wait only on children that were actually spawned. If no child ID was returned, delegation did not happen: report the native lane as unavailable and either use an explicitly allowed direct fallback or stop the required lane.
-- Do not describe work as parallel, delegated, independent, or fresh-context unless the corresponding child thread was successfully created.
-- Never simulate a child lane by doing its assigned investigation in the primary thread. A direct fallback is a declared route change, not successful delegation.
-- Do not use delegation to avoid understanding the task or reading critical code.
-- Do not ask children to recursively orchestrate. They report blockers, conflicts, scope expansion, and recommended handoffs upward.
-- Do not make the primary agent duplicate work assigned to an active child.
-- Track every non-solo lane using references/fallback-states.md and retain one lane receipt with immutable spawn-attempt history.
+Assurance reviewers are not initial execution lanes. Spawn a fresh reviewer only after
+implementation and parent verification, and before that reviewer reads the accumulated
+diff. This deliberate later spawn does not violate the execution-lane gate.
 
-## Use proportional concurrency
+Native child output is an untrusted work product. The parent owns intent, ambiguity,
+architecture, integration, complete diff inspection, verification reruns, and final
+acceptance. CCC does not automatically schedule work and does not turn child completion
+into proof that the task result is correct.
 
-- Parallelize independent read-heavy work first.
-- Choose child count from the number of genuinely independent lanes and the runtime's available capacity. Do not target a fixed count.
-- Use one writer at a time by default.
-- Allow parallel writers only when file ownership is disjoint, interfaces are already fixed, and the primary agent can prove that the edits will not overlap.
-- If ownership is uncertain, investigate first and write sequentially.
+## Model routing and diagnostics
 
-## Route models by capability
+Use `references/model-lanes.md` as the sole detailed model policy. Explicit model
+selection is limited to the fast and frontier lanes described there. Bounded and standard
+lanes use the host default and must not be reported as a named model merely because a
+historical validator accepts that label. A model claim requires runtime evidence.
 
-Read references/model-lanes.md before spawning children. Use explicit model and reasoning settings when the native spawn surface supports them.
+Lane receipts and route manifests are optional v1 runtime diagnostics for high-risk
+routing evidence, model verification, and fallback troubleshooting. They are not task
+results and are not required for ordinary parent-check work. When a v1 diagnostic says
+`VERIFIED`, that means only that the recorded runtime routing evidence matched; it does
+not mean the child solved the task. Receipt or manifest v2 is outside the current
+workflow; do not invent host evidence merely to fill a new schema.
 
-- Fast exploration: GPT-5.3-Codex-Spark with low effort when the host exposes it; otherwise Luna with low effort.
-- Bounded, fully specified implementation: Luna with max effort when available.
-- Judgment-heavy implementation, integration, or debugging: Terra with high effort when available.
-- Architecture, security, conflict resolution, and fresh final review: Sol with high or xhigh effort when available.
+## Acceptance
 
-If a requested model or effort is unavailable, do not claim it was used. The only automatic cross-model fallback is Spark/low to Luna/low after an explicit model_unavailable failure. Other lanes require an evidence-backed declared reroute. A required independent frontier review remains unavailable rather than silently passing.
+The parent accepts only after inspecting the accumulated diff and rerunning the relevant
+tests or checks. A fresh second-opinion review may be requested after those checks; any
+review correction invalidates the prior verdict and requires parent re-verification.
 
-Prefer an explicit Spark model and low reasoning on each fast-lane spawn. Confirm the child's resolved model from runtime metadata before claiming Spark. If the host reports model_unavailable for explicit Spark routing, fall back to explicit Luna/low rather than changing the global subagent default silently.
+For the manual native canary and its privacy rules, load `evals/canary/playbook.md` and
+`evals/canary/result-schema.json` only when that release-gate evaluation is requested.
+Canary results must not contain prompts, child IDs, local paths, or transcripts. GitHub
+CI remains static unit/CLI verification; it does not run native canaries.
 
-When local Codex rollout files are available, use scripts/inspect_child_runtime.py with the exact child thread ID to obtain allowlisted routing evidence. Never inspect or expose transcript content merely to prove model identity.
+## Supporting references
 
-Before accepting completed non-solo work, validate each lane receipt with scripts/validate_lane_receipt.py and the complete route with scripts/validate_route_manifest.py when local script execution is available.
-
-## Verify and accept
-
-- Treat child reports as claims, not proof.
-- Wait for every requested lane before synthesis.
-- Inspect the complete repository diff and changed-file scope.
-- Rerun the smallest checks that directly prove the acceptance criteria, then broader checks when the claim requires them.
-- Reconcile conflicting child findings explicitly.
-- Accept a non-solo route only when every required lane's final state is SUCCEEDED and its final valid attempt has routing evidence. Earlier failed attempts remain history and do not invalidate a successful permitted fallback. A required frontier review failure leaves the deliverable NOT_VERIFIED.
-- For behaviorally read-only reviewers, capture repository state before and after review; any mutation invalidates that review.
-- Follow references/assurance.md for high-risk review gates and correction loops.
-
-## Delegation invariant
-
-For a non-solo route, the first task-execution tools after loading the required skill references must be native spawn calls. If that invariant is violated, stop claiming the non-solo route, declare the route failure, and reassess before continuing.
-
-## Stop conditions
-
-Stop when the requested outcome is verified, the user stops the task, a destructive or external action needs new authority, or a precise blocker leaves no safe in-scope path. Do not keep spawning agents after additional lanes stop improving the evidence.
-
-## Design sources
-
-This original workflow is inspired by publicly documented ideas from oh-my-codex, Sol Advisor, and Superpowers. It uses Codex native subagents rather than copying or requiring those projects' external runtimes.
+- `references/routing.md`: execution-shape and assurance decisions.
+- `references/model-lanes.md`: the complete explicit fast/frontier and host-default
+  model policy.
+- `references/task-packets.md`: self-contained child packet contract.
+- `references/assurance.md`: parent acceptance and optional review gates.
+- `references/fallback-states.md`: optional v1 diagnostic states and permitted fallback
+  history.
+- `evals/canary/`: privacy-safe manual native canary fixtures and result materials.

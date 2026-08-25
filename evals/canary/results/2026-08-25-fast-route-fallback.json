@@ -1,0 +1,20 @@
+{
+  "schema_version": "ccc-native-canary-result-v1",
+  "scenario_id": "fast-route-fallback",
+  "fixture_sha256": "9695c55e0f4345273d6e41dd2f742d4e4f79b51e239fa6adc9ae5a67c361d89e",
+  "route": "fast",
+  "expected_child_count": 1,
+  "observed_child_count": 1,
+  "children_distinct": null,
+  "worktree_unchanged": true,
+  "requested_model": "gpt-5.3-codex-spark",
+  "resolved_model": "gpt-5.6-luna",
+  "requested_effort": "low",
+  "resolved_effort": "low",
+  "fallback": "spark_to_luna",
+  "failure_class": "quota_denied",
+  "verification": "VERIFIED",
+  "task_result": "PASS",
+  "wall_time_ms": 45666,
+  "parent_rework": "none"
+}
