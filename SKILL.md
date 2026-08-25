@@ -48,10 +48,17 @@ into proof that the task result is correct.
 
 ## Model routing and diagnostics
 
-Use `references/model-lanes.md` as the sole detailed model policy. Explicit model
-selection is limited to the fast and frontier lanes described there. Bounded and standard
-lanes use the host default and must not be reported as a named model merely because a
-historical validator accepts that label. A model claim requires runtime evidence.
+Use `references/model-lanes.md` as the sole detailed model policy. All four capability
+lanes use that policy: fast exploration, bounded implementation, standard judgment, and
+frontier review. The middle lanes are explicit routes with their own effort boundaries;
+they are not inherited defaults. Do not repeat concrete model IDs or efforts here. A
+model claim requires runtime evidence.
+
+The fast lane's documented pre-child cross-model fallback is one fallback attempt, not a
+general retry budget. A bounded child that lacks a decision-complete packet must stop with
+`NEEDS_DECISION`; a standard child that discovers architecture, security, or other
+high-risk judgment must stop for parent reassessment. Neither condition silently reroutes
+the child.
 
 Lane receipts and route manifests are optional v1 runtime diagnostics for high-risk
 routing evidence, model verification, and fallback troubleshooting. They are not task
@@ -74,8 +81,7 @@ CI remains static unit/CLI verification; it does not run native canaries.
 ## Supporting references
 
 - `references/routing.md`: execution-shape and assurance decisions.
-- `references/model-lanes.md`: the complete explicit fast/frontier and host-default
-  model policy.
+- `references/model-lanes.md`: the complete explicit four-lane model policy.
 - `references/task-packets.md`: self-contained child packet contract.
 - `references/assurance.md`: parent acceptance and optional review gates.
 - `references/fallback-states.md`: optional v1 diagnostic states and permitted fallback

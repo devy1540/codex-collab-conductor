@@ -38,7 +38,8 @@ Require a concise report containing findings or changes, evidence, verification 
 
 Choose task shape and assurance before model routing. The child packet should not invent a
 concrete model or claim a resolved model; follow `references/model-lanes.md` and let the
-parent own that choice.
+parent own that choice. The packet's capability lane determines the explicit request and
+effort boundary; it does not grant a generic retry or silent cross-lane reroute.
 
 For non-solo work, the parent may attach an optional v1 lane receipt containing
 route_id, nullable supersedes_route_id, parent_thread_id, the lane's final state,
@@ -67,7 +68,9 @@ correctness.
 - Edit only owned files.
 - Use existing patterns and make the smallest defensible change.
 - Run targeted checks and review the diff.
-- Stop and report when a material decision is missing or ownership would expand.
+- Stop and report `NEEDS_DECISION` when a material decision is missing or ownership would
+  expand. Do not invent the decision or silently reroute; the parent must reassess the
+  task shape and choose any new lane explicitly.
 
 ## Verifier
 

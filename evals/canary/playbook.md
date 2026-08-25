@@ -49,12 +49,14 @@ The scenario fails if the parent spawns a child merely to prove that delegation 
 Fixture: `fixtures/parallel-read.json`
 
 Create one read-only native packet for each of the two independent synthetic questions.
+Each packet uses the fast capability route in `references/model-lanes.md`: request
+Spark/low and use at most one pre-child unavailable/quota Luna/low fallback per lane.
 Spawn the selected lanes before doing the task-specific investigation, wait only on
 confirmed child IDs, and have the parent reconcile both answers. Expected outcome:
 
 - route: `parallel-read`
-- requested model: `host-default`
-- resolved model: observed only when runtime metadata is available
+- requested model: the explicit Spark fast request
+- resolved model: the observed Spark or permitted Luna fallback
 - task result: `PASS` when both independent answers match the fixture's expected values
   and the parent reconciles them
 - verification: `VERIFIED` only when the parent has the routing evidence it chose to
@@ -86,27 +88,40 @@ Expected outcome:
 Never force an outage, fabricate a quota denial, or call a manually chosen second model
 a fallback. One functional run may legitimately take the no-fallback branch.
 
-### 4. Host-default judgment
+### 4. Bounded implementation
 
-Fixture: `fixtures/host-default-judgment.json`
+Fixture: `fixtures/bounded-implementation.json`
 
-Use a standard judgment packet that does not require a concrete explicit model. Leave the
-model choice to the Codex host. The parent must not claim a named model from a historical
-v1 capability label or from the task shape. Expected outcome:
+Use a decision-complete bounded implementation packet and request Luna/max explicitly.
+The child must implement only the synthetic contract. If it reports a missing material
+decision, stop with `NEEDS_DECISION`; do not silently change models. Expected outcome:
+
+- route: `bounded`
+- requested/resolved model: explicit and observed Luna
+- requested/resolved effort: `max`
+- fallback: `none`
+- task result: `PASS` when the returned implementation satisfies every rule and sample
+- verification: `VERIFIED` only when Luna/max runtime evidence is observed
+
+This scenario tests a bounded execution role, not a cost, token, or quality benchmark.
+
+### 5. Standard judgment
+
+Fixture: `fixtures/standard-judgment.json`
+
+Use a standard judgment packet and request Terra/high explicitly. The parent verifies the
+integration decision. If the work expands into architecture, security, concurrency, or
+other high-risk judgment, stop for parent reassessment rather than switching to Sol.
+Expected outcome:
 
 - route: `standard`
-- requested model: `host-default`
-- resolved model: the observed host value, or null when the host does not expose it
+- requested/resolved model: explicit and observed Terra
+- requested/resolved effort: `high`
 - fallback: `none`
-- task result: `PASS` when the parent correctly identifies the fixture's integration
-  decision and reruns the check
-- verification: `VERIFIED` only if the observed routing evidence supports the claim;
-  otherwise `NOT_VERIFIED`
+- task result: `PASS` when the idempotency decision matches the fixture
+- verification: `VERIFIED` only when Terra/high runtime evidence is observed
 
-This scenario tests judgment about when not to force a model, not a named-model
-benchmark.
-
-### 5. Frontier seeded-defect review
+### 6. Frontier seeded-defect review
 
 Fixture: `fixtures/frontier-seeded-defect-review.json`
 

@@ -4,12 +4,13 @@ This directory is a manual release-gate package for CCC. It contains only synthe
 read-only fixtures and instructions. It does not start native children, simulate a
 result, or claim that the policy is faster, more correct, or independently assuring.
 
-Run exactly one functional execution for each of these five scenarios:
+Run exactly one functional execution for each of these six scenarios:
 
 - `solo-guard`
 - `parallel-read`
 - `fast-route-fallback`
-- `host-default-judgment`
+- `bounded-implementation`
+- `standard-judgment`
 - `frontier-seeded-defect-review`
 
 Use `playbook.md` for the route decision and pass criteria. Record one redacted result

@@ -78,8 +78,10 @@ fresh scrutiny. The parent adjudicates disagreements and verifies every accepted
 
 ## Model and diagnostics boundary
 
-After the route is selected, follow `model-lanes.md`. Only its fast and frontier lanes
-permit explicit model routing. Bounded and standard routes use the host default.
+After the route is selected, follow `model-lanes.md`. All four capability lanes have
+explicit model requests and effort boundaries there. The fast lane has one permitted
+pre-child unavailable/quota cross-model fallback; bounded implementation and standard
+judgment have no generic retry or implicit model reroute.
 
 Lane receipts and route manifests are optional v1 diagnostics. Use them only when high-risk
 routing evidence, model verification, or fallback troubleshooting justifies the privacy
@@ -91,4 +93,8 @@ does not prove task-result correctness. No receipt or manifest v2 is part of thi
 Escalate when evidence reveals wider blast radius, hidden coupling, security sensitivity,
 or an incorrect initial specification. Declare the route change and its reason. Do not
 silently downgrade assurance, swap a started child to another model, or treat missing
-runtime evidence as a successful route.
+runtime evidence as a successful route. A bounded child that lacks a material decision
+reports `NEEDS_DECISION`; the parent may explicitly reroute it to standard judgment after
+reassessing the task shape. A standard child that expands into architecture, security, or
+other high-risk judgment stops for parent reassessment, which may explicitly choose the
+frontier lane. Neither transition is automatic.

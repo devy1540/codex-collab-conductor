@@ -1,0 +1,27 @@
+{
+  "fixture_version": "ccc-native-canary-fixture-v1",
+  "scenario_id": "bounded-implementation",
+  "data_classification": "synthetic-public",
+  "mode": "read-only",
+  "contract": {
+    "language": "python",
+    "function": "normalize_tags",
+    "rules": [
+      "trim surrounding whitespace",
+      "lowercase each value",
+      "discard empty normalized values",
+      "remove duplicates while preserving first-seen order"
+    ],
+    "sample_input": [" A ", "b", "a", " ", "B", "c"],
+    "sample_output": ["a", "b", "c"]
+  },
+  "route_policy": {
+    "execution_route": "bounded",
+    "model_request": "gpt-5.6-luna",
+    "reasoning_effort": "max",
+    "missing_decision_behavior": "NEEDS_DECISION"
+  },
+  "expected": {
+    "task_result": "PASS"
+  }
+}

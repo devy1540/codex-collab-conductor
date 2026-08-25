@@ -57,11 +57,15 @@ runtime behavior to decide whether the task itself is correct.
 ## Fallback boundary
 
 The only automatic cross-model fallback is the fast-lane pre-child unavailable/quota
-retry defined in `model-lanes.md`, and it is permitted at most once. A started fast child
-that times out or reports `child_error` does not trigger a model switch. Frontier Sol
-unavailability has no downgrade and remains `NOT_VERIFIED`. Bounded and standard lanes
-use the host default; any reroute must be declared as a route decision, not hidden in a
-receipt.
+retry defined in `model-lanes.md`, and it is permitted at most once. This means one
+Spark-to-Luna fallback attempt, not a general retry budget: a fallback attempt cannot be
+retried, and a started fast child that times out or reports `child_error` does not trigger
+a model switch. Frontier Sol unavailability has no downgrade and remains `NOT_VERIFIED`.
+Bounded implementation and standard judgment use their explicit lane assignments; any
+reroute must be declared as a route decision, not hidden in a receipt. A bounded
+`NEEDS_DECISION` report may lead to an explicitly parent-selected standard route, and a
+standard task that expands into high-risk judgment may lead to an explicitly
+parent-selected frontier route. Neither transition is automatic.
 
 If a host exposes quota as a cause that the existing v1 validator cannot represent, omit
 the optional receipt rather than fabricating `model_unavailable` or another value.
@@ -92,8 +96,10 @@ When a parent explicitly chooses to record a diagnostic, use the existing
         reasoning_effort: <requested effort>
 
 The existing validator binds successful attempts to a completed child turn and checks
-parent, model, and effort evidence. It is compatibility tooling only. In particular,
-historical capability labels in a v1 receipt do not authorize a new explicit route.
+parent, model, and effort evidence. It already supports the explicit bounded and standard
+assignments described in `model-lanes.md`. It is compatibility tooling only. In
+particular, historical capability labels in a v1 receipt do not authorize a new explicit
+route.
 
 Validate a diagnostic only when it was intentionally recorded:
 

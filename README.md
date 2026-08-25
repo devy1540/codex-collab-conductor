@@ -12,8 +12,9 @@ independent assurance.
 - Bounded native read-only and implementation packets when their ownership is explicit.
 - A separate assurance choice: parent verification by default, with an optional fresh
   second opinion for material risk.
-- Conservative fast/frontier routing and host-default handling for other lanes; see the
-  single detailed policy in `references/model-lanes.md`.
+- Explicit capability-lane routing for fast exploration, bounded implementation, standard
+  judgment, and frontier review; see the single detailed policy in
+  `references/model-lanes.md`.
 - Optional privacy-safe runtime diagnostics for high-risk routing and fallback
   troubleshooting.
 
@@ -46,8 +47,7 @@ Supporting resources are discoverable from that skill:
 
 - A current Codex host with native subagents enabled when a non-solo route is selected.
 - A native spawn surface that returns child thread IDs for delegated work.
-- Access to an explicitly requested model only when the selected fast or frontier route
-  requires it.
+- Access to the explicitly requested model for the selected capability lane.
 
 ## Install
 
@@ -83,9 +83,13 @@ The repository does not modify `AGENTS.md` automatically.
 ## Model policy
 
 Task shape and assurance are selected before model routing. The complete, non-duplicated
-policy is in [`references/model-lanes.md`](references/model-lanes.md): explicit routing is
-limited to the fast and frontier lanes; bounded and standard lanes use the host default.
-Do not infer or claim a resolved model without runtime evidence.
+policy is in [`references/model-lanes.md`](references/model-lanes.md). The fast lane is a
+low-effort exploration route with one permitted pre-child unavailable/quota cross-model
+fallback. Bounded implementation is an explicit quality-first route only for
+decision-complete packets, standard judgment is the explicit route for judgment-heavy
+integration, debugging, and compatibility work, and frontier review is reserved for
+concrete high-risk judgment. The fast fallback is one fallback attempt, not a general
+retry budget. Do not infer or claim a resolved model without runtime evidence.
 
 ## Optional runtime diagnostics
 
@@ -132,11 +136,12 @@ fabricating evidence. Do not treat an omitted diagnostic as proof that routing h
 
 ## Manual native canary
 
-`evals/canary/` is a privacy-safe manual release gate with five deterministic,
-read-only synthetic fixtures: solo guard, parallel read, fast route/fallback,
-host-default judgment, and frontier seeded-defect review. Run one functional execution
-per scenario and record only the fields in the result schema: route, requested model,
-resolved model, task `PASS`/`FAIL`, wall time, parent rework, and verification status.
+`evals/canary/` is a privacy-safe manual release gate with six deterministic,
+read-only synthetic fixtures: solo guard, parallel fast read, fast route/fallback,
+bounded implementation, standard judgment, and frontier seeded-defect review.
+Run one functional execution per scenario and record only the fields in the result schema:
+route, requested model, resolved model, task `PASS`/`FAIL`, wall time, parent rework, and
+verification status.
 
 Do not store prompts, child IDs, local paths, or transcripts in canary results. The
 canary is not simulated in CI. One canary run does not justify a general correctness or

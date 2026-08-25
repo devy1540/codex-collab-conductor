@@ -1,0 +1,20 @@
+{
+  "schema_version": "ccc-native-canary-result-v1",
+  "scenario_id": "bounded-implementation",
+  "fixture_sha256": "aa3f33c6b64e3a48a58c8600b1827b3db3bb4a901ca4f05ce8836af57720ad82",
+  "route": "bounded",
+  "expected_child_count": 1,
+  "observed_child_count": 1,
+  "children_distinct": null,
+  "worktree_unchanged": true,
+  "requested_model": "gpt-5.6-luna",
+  "resolved_model": "gpt-5.6-luna",
+  "requested_effort": "max",
+  "resolved_effort": "max",
+  "fallback": "none",
+  "failure_class": "none",
+  "verification": "VERIFIED",
+  "task_result": "PASS",
+  "wall_time_ms": 76712,
+  "parent_rework": "none"
+}

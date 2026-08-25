@@ -40,7 +40,8 @@ class PolicyContractTests(unittest.TestCase):
             "fixtures/solo-guard.json",
             "fixtures/parallel-read.json",
             "fixtures/fast-route-fallback.json",
-            "fixtures/host-default-judgment.json",
+            "fixtures/bounded-implementation.json",
+            "fixtures/standard-judgment.json",
             "fixtures/frontier-seeded-defect-review.json",
         ]
         for relative in required:
@@ -130,10 +131,16 @@ class PolicyContractTests(unittest.TestCase):
         self.assertEqual(fast["fallback"], "spark_to_luna")
         self.assertEqual(fast["failure_class"], "quota_denied")
 
-        judgment = by_scenario["host-default-judgment"]
+        bounded = by_scenario["bounded-implementation"]
+        self.assertEqual(bounded["route"], "bounded")
+        self.assertEqual(bounded["requested_model"], "gpt-5.6-luna")
+        self.assertEqual(bounded["requested_effort"], "max")
+        self.assertEqual(bounded["fallback"], "none")
+
+        judgment = by_scenario["standard-judgment"]
         self.assertEqual(judgment["route"], "standard")
-        self.assertEqual(judgment["requested_model"], "host-default")
-        self.assertEqual(judgment["requested_effort"], "host-default")
+        self.assertEqual(judgment["requested_model"], "gpt-5.6-terra")
+        self.assertEqual(judgment["requested_effort"], "high")
         self.assertEqual(judgment["fallback"], "none")
         self.assertEqual(judgment["failure_class"], "none")
 
@@ -161,6 +168,16 @@ class PolicyContractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_semantics(invalid_frontier)
 
+        invalid_bounded = copy.deepcopy(bounded)
+        invalid_bounded["resolved_model"] = "gpt-5.6-sol"
+        with self.assertRaises(ValueError):
+            validate_semantics(invalid_bounded)
+
+        invalid_judgment = copy.deepcopy(judgment)
+        invalid_judgment["requested_effort"] = "xhigh"
+        with self.assertRaises(ValueError):
+            validate_semantics(invalid_judgment)
+
         leaked_identifier = copy.deepcopy(parallel)
         leaked_identifier["resolved_model"] = "00000000-0000-0000-0000-000000000000"
         with self.assertRaises(ValueError):
@@ -170,8 +187,10 @@ class PolicyContractTests(unittest.TestCase):
         model_policy = (ROOT / "references/model-lanes.md").read_text(encoding="utf-8")
         self.assertIn("gpt-5.3-codex-spark", model_policy)
         self.assertIn("gpt-5.6-luna", model_policy)
+        self.assertIn("gpt-5.6-terra", model_policy)
         self.assertIn("gpt-5.6-sol", model_policy)
-        self.assertIn("host default", model_policy)
+        self.assertIn("reasoning effort `max`", model_policy)
+        self.assertIn("reasoning effort `high`", model_policy)
         self.assertIn("pre-child", model_policy)
         self.assertIn("NOT_VERIFIED", model_policy)
         self.assertIn("xhigh", model_policy)

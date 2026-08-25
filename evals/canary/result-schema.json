@@ -34,7 +34,8 @@
         "solo-guard",
         "parallel-read",
         "fast-route-fallback",
-        "host-default-judgment",
+        "bounded-implementation",
+        "standard-judgment",
         "frontier-seeded-defect-review"
       ]
     },
@@ -47,6 +48,7 @@
         "solo",
         "parallel-read",
         "fast",
+        "bounded",
         "standard",
         "frontier"
       ]
@@ -70,11 +72,12 @@
       "type": "boolean"
     },
     "requested_model": {
-      "description": "The explicit request or host-default marker, never a claim about runtime resolution.",
+      "description": "The explicit model request, never a claim about runtime resolution.",
       "enum": [
         null,
-        "host-default",
         "gpt-5.3-codex-spark",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
         "gpt-5.6-sol"
       ]
     },
@@ -91,10 +94,10 @@
     "requested_effort": {
       "enum": [
         null,
-        "host-default",
         "low",
         "high",
-        "xhigh"
+        "xhigh",
+        "max"
       ]
     },
     "resolved_effort": {

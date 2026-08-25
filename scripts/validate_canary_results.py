@@ -10,7 +10,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CANARY_DIR = ROOT / "evals" / "canary"
-REQUESTED_MODELS = {None, "host-default", "gpt-5.3-codex-spark", "gpt-5.6-sol"}
+REQUESTED_MODELS = {
+    None,
+    "gpt-5.3-codex-spark",
+    "gpt-5.6-luna",
+    "gpt-5.6-terra",
+    "gpt-5.6-sol",
+}
 RESOLVED_MODELS = {
     None,
     "gpt-5.3-codex-spark",
@@ -72,15 +78,23 @@ def validate_semantics(payload: dict) -> None:
                 "route": "parallel-read",
                 "expected_child_count": 2,
                 "children_distinct": True,
-                "requested_model": "host-default",
-                "requested_effort": "host-default",
-                "fallback": "none",
-                "failure_class": "none",
+                "requested_model": "gpt-5.3-codex-spark",
+                "requested_effort": "low",
+                "resolved_effort": "low",
                 "verification": "VERIFIED",
             },
         )
-        _require(payload["resolved_model"] is not None, "parallel model evidence missing")
-        _require(payload["resolved_effort"] is not None, "parallel effort evidence missing")
+        if payload["fallback"] == "none":
+            _require_fields(
+                payload,
+                {"resolved_model": "gpt-5.3-codex-spark", "failure_class": "none"},
+            )
+        else:
+            _require_fields(payload, {"fallback": "spark_to_luna", "resolved_model": "gpt-5.6-luna"})
+            _require(
+                payload["failure_class"] in {"model_unavailable", "quota_denied"},
+                "invalid parallel fast fallback cause",
+            )
         return
 
     if scenario == "fast-route-fallback":
@@ -109,22 +123,40 @@ def validate_semantics(payload: dict) -> None:
             )
         return
 
-    if scenario == "host-default-judgment":
+    if scenario == "bounded-implementation":
+        _require_fields(
+            payload,
+            {
+                "route": "bounded",
+                "expected_child_count": 1,
+                "children_distinct": None,
+                "requested_model": "gpt-5.6-luna",
+                "resolved_model": "gpt-5.6-luna",
+                "requested_effort": "max",
+                "resolved_effort": "max",
+                "fallback": "none",
+                "failure_class": "none",
+                "verification": "VERIFIED",
+            },
+        )
+        return
+
+    if scenario == "standard-judgment":
         _require_fields(
             payload,
             {
                 "route": "standard",
                 "expected_child_count": 1,
                 "children_distinct": None,
-                "requested_model": "host-default",
-                "requested_effort": "host-default",
+                "requested_model": "gpt-5.6-terra",
+                "resolved_model": "gpt-5.6-terra",
+                "requested_effort": "high",
+                "resolved_effort": "high",
                 "fallback": "none",
                 "failure_class": "none",
                 "verification": "VERIFIED",
             },
         )
-        _require(payload["resolved_model"] is not None, "judgment model evidence missing")
-        _require(payload["resolved_effort"] is not None, "judgment effort evidence missing")
         return
 
     if scenario == "frontier-seeded-defect-review":

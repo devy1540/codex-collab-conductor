@@ -12,8 +12,12 @@ mapping, log classification, large-input triage, and formatting review.
 
 - Request `gpt-5.3-codex-spark` with reasoning effort `low` explicitly.
 - If and only if the child cannot start because the explicitly requested model is
-  unavailable or the host reports a pre-child quota denial, make one retry with
-  `gpt-5.6-luna` and reasoning effort `low` explicitly.
+  unavailable or the host reports a pre-child quota denial, make exactly one
+  cross-model fallback attempt with `gpt-5.6-luna` and reasoning effort `low`
+  explicitly.
+- The Luna/low fallback is exactly one Spark-to-Luna fallback attempt after the primary
+  request is rejected before child start. It is not a general retry budget: do not retry
+  Luna/low repeatedly, add another model, or use it after a child has started.
 - Do not switch models after a Spark child has started and then times out or reports a
   child error. Report the lane failure or change the task route explicitly; do not call
   that event a fast fallback.
@@ -23,13 +27,38 @@ The pre-child fallback is a resilience rule, not a speed or quality claim. If th
 reports a quota condition that cannot be represented by the existing v1 diagnostic
 causes, omit the optional receipt instead of inventing a cause.
 
-## Bounded and standard lanes
+## Bounded implementation lane
 
-Bounded implementation and standard judgment lanes use the Codex host default. Do not
-send a concrete model ID or reasoning setting for these lanes, and do not claim that the
-host selected a particular named model. If the host exposes a resolved model in runtime
-metadata, it may be recorded as observed evidence only; absence of that evidence is not
-a reason to infer it.
+Use bounded implementation only when the packet is decision-complete: its objective,
+owned files, interfaces, constraints, and verification are explicit enough that the child
+can implement without inventing product or architecture decisions.
+
+- Request `gpt-5.6-luna` explicitly with reasoning effort `max`.
+- If a Luna child discovers a missing material decision, stop and report
+  `NEEDS_DECISION`. Do not invent the decision or silently reroute. The parent may
+  reassess the task shape and explicitly reroute to the standard judgment lane
+  (Terra/high) when that is appropriate; there is no automatic Luna-to-Terra fallback.
+- `max` is a quality-first setting that must be evaluated on representative work. Treat
+  Luna as a lower-cost implementation strategy subject to evaluation; do not claim fewer
+  tokens or Codex subscription quota savings without evidence.
+
+## Standard judgment lane
+
+Use standard judgment for judgment-heavy integration, debugging, compatibility, and
+similar work that is broader than a decision-complete implementation packet but does not
+require a concrete frontier review.
+
+- Request `gpt-5.6-terra` explicitly with reasoning effort `high`.
+- If the task expands into architecture, security, concurrency, conflict-resolution, or
+  other high-risk judgment, stop and report the expansion. The parent may explicitly
+  choose the frontier lane after reassessing the task shape; there is no automatic
+  Terra-to-Sol fallback.
+- Terra is the balanced intelligence/cost judgment route. This is a routing heuristic,
+  not a guarantee of quality, latency, token use, or quota consumption.
+
+The role guidance is directional: Luna is suited to cost-sensitive or high-volume
+implementation, Terra to intelligence/cost balance, and Sol to frontier judgment. These
+roles do not establish task correctness or guarantee a particular cost or quota outcome.
 
 The v1 diagnostic scripts retain historical capability labels for compatibility with
 existing records. Those labels do not authorize explicit model routing for a new task.
