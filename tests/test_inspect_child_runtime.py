@@ -8,8 +8,9 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts" / "inspect_child_runtime.py"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILL_ROOT = REPO_ROOT / "skills" / "codex-collab-conductor"
+SCRIPT = SKILL_ROOT / "scripts" / "inspect_child_runtime.py"
 THREAD_ID = "01a032a6-4cdb-7de2-acae-2ee3a8f873fc"
 PARENT_ID = "01a0319d-52b7-7853-8840-5ccd6bb436ff"
 TURN_ID = "01a032a6-4e5b-7e73-ba5a-e555f9eec921"

@@ -9,7 +9,8 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILL_ROOT = REPO_ROOT / "skills" / "codex-collab-conductor"
 
 
 class PolicyContractTests(unittest.TestCase):
@@ -28,10 +29,10 @@ class PolicyContractTests(unittest.TestCase):
             "scripts/validate_canary_results.py",
         ]
         for relative in required:
-            self.assertTrue((ROOT / relative).is_file(), relative)
+            self.assertTrue((SKILL_ROOT / relative).is_file(), relative)
 
     def test_canary_package_is_complete_and_synthetic(self) -> None:
-        canary = ROOT / "evals" / "canary"
+        canary = SKILL_ROOT / "evals" / "canary"
         required = [
             "README.md",
             "playbook.md",
@@ -153,7 +154,7 @@ class PolicyContractTests(unittest.TestCase):
         self.assertEqual(frontier["fallback"], "none")
 
         validate_semantics = runpy.run_path(
-            str(ROOT / "scripts" / "validate_canary_results.py")
+            str(SKILL_ROOT / "scripts" / "validate_canary_results.py")
         )["validate_semantics"]
         for payload in by_scenario.values():
             validate_semantics(payload)
@@ -184,7 +185,7 @@ class PolicyContractTests(unittest.TestCase):
             validate_semantics(leaked_identifier)
 
     def test_model_policy_is_the_only_concrete_route_source(self) -> None:
-        model_policy = (ROOT / "references/model-lanes.md").read_text(encoding="utf-8")
+        model_policy = (SKILL_ROOT / "references/model-lanes.md").read_text(encoding="utf-8")
         self.assertIn("gpt-5.3-codex-spark", model_policy)
         self.assertIn("gpt-5.6-luna", model_policy)
         self.assertIn("gpt-5.6-terra", model_policy)
@@ -209,13 +210,14 @@ class PolicyContractTests(unittest.TestCase):
             "references/assurance.md",
             "references/task-packets.md",
         ]:
-            content = (ROOT / relative).read_text(encoding="utf-8")
+            base = REPO_ROOT if relative == "README.md" else SKILL_ROOT
+            content = (base / relative).read_text(encoding="utf-8")
             for model in concrete_models:
                 self.assertNotIn(model, content, f"{model} duplicated in {relative}")
 
     def test_skill_frontmatter_and_implicit_policy(self) -> None:
-        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-        metadata = (ROOT / "agents/openai.yaml").read_text(encoding="utf-8")
+        skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        metadata = (SKILL_ROOT / "agents/openai.yaml").read_text(encoding="utf-8")
         self.assertRegex(skill, r"(?s)^---\nname: codex-collab-conductor\n")
         self.assertRegex(skill, r"(?m)^description: .+")
         self.assertIn("allow_implicit_invocation: true", metadata)
@@ -224,8 +226,8 @@ class PolicyContractTests(unittest.TestCase):
         self.assertIn("bounded implementation followed by a deferred fresh second opinion", metadata)
 
     def test_spawn_and_wait_invariants(self) -> None:
-        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-        routing = (ROOT / "references/routing.md").read_text(encoding="utf-8")
+        skill = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        routing = (SKILL_ROOT / "references/routing.md").read_text(encoding="utf-8")
         self.assertIn("Do not call wait with an empty target list", skill)
         self.assertIn("before any task-specific file read", skill)
         self.assertIn("execution lane", skill)
@@ -233,8 +235,8 @@ class PolicyContractTests(unittest.TestCase):
         self.assertIn("Confirm a non-empty child ID", routing)
 
     def test_model_and_fallback_contract(self) -> None:
-        models = (ROOT / "references/model-lanes.md").read_text(encoding="utf-8")
-        fallback = (ROOT / "references/fallback-states.md").read_text(encoding="utf-8")
+        models = (SKILL_ROOT / "references/model-lanes.md").read_text(encoding="utf-8")
+        fallback = (SKILL_ROOT / "references/fallback-states.md").read_text(encoding="utf-8")
         self.assertIn("gpt-5.3-codex-spark", models)
         self.assertIn("gpt-5.6-luna", models)
         self.assertIn("at most once", fallback)
@@ -248,8 +250,8 @@ class PolicyContractTests(unittest.TestCase):
         self.assertIn("validate_route_manifest.py", fallback)
 
     def test_task_packet_and_review_contract(self) -> None:
-        packets = (ROOT / "references/task-packets.md").read_text(encoding="utf-8")
-        assurance = (ROOT / "references/assurance.md").read_text(encoding="utf-8")
+        packets = (SKILL_ROOT / "references/task-packets.md").read_text(encoding="utf-8")
+        assurance = (SKILL_ROOT / "references/assurance.md").read_text(encoding="utf-8")
         for heading in [
             "ROLE",
             "OBJECTIVE",

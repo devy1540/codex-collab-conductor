@@ -8,8 +8,9 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts" / "validate_route_manifest.py"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SKILL_ROOT = REPO_ROOT / "skills" / "codex-collab-conductor"
+SCRIPT = SKILL_ROOT / "scripts" / "validate_route_manifest.py"
 SPEC = importlib.util.spec_from_file_location("validate_route_manifest", SCRIPT)
 assert SPEC and SPEC.loader
 MODULE = importlib.util.module_from_spec(SPEC)

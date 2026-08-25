@@ -14,32 +14,48 @@ independent assurance.
   second opinion for material risk.
 - Explicit capability-lane routing for fast exploration, bounded implementation, standard
   judgment, and frontier review; see the single detailed policy in
-  `references/model-lanes.md`.
+  [`skills/codex-collab-conductor/references/model-lanes.md`](skills/codex-collab-conductor/references/model-lanes.md).
 - Optional privacy-safe runtime diagnostics for high-risk routing and fallback
   troubleshooting.
 
-CCC intentionally remains one personal-first skill. It does not add a plugin, MCP
-server, daemon, tmux runtime, custom agent TOML, automatic scheduler, or receipt schema
-v2.
+The repository is both a Codex plugin root and one bundled skill. The plugin adds no MCP
+server, app, hook, daemon, tmux runtime, custom scheduler, or receipt schema v2.
 
 ## Repository layout
 
-The repository contains one actual skill:
+The root contains the plugin manifest and public project files:
 
-- `SKILL.md`
+- `.codex-plugin/plugin.json`
+- `README.md`, `LICENSE`, `NOTICE.md`, `.github/`, and `tests/`
 
-Supporting resources are discoverable from that skill:
+The root `SKILL.md`, `agents/`, `references/`, `scripts/`, and `evals/` entries are
+tracked compatibility symlinks to the one canonical nested skill. They are not duplicate
+skill bundles; the plugin manifest continues to package only `./skills/`.
 
-- `agents/openai.yaml`: Codex UI metadata and implicit invocation policy.
-- `references/routing.md`: execution shape and assurance decisions.
-- `references/model-lanes.md`: the sole detailed model-routing policy.
-- `references/task-packets.md`: self-contained native child briefs.
-- `references/assurance.md`: parent verification and optional fresh-review gates.
-- `references/fallback-states.md`: optional v1 diagnostic state and fallback guidance.
-- `scripts/inspect_child_runtime.py`: allowlisted child routing evidence inspector.
-- `scripts/validate_lane_receipt.py`: v1 lane-diagnostic validator.
-- `scripts/validate_route_manifest.py`: v1 route-diagnostic validator.
-- `evals/canary/`: manual native canary fixtures, playbook, and result materials.
+The one actual skill and all of its supporting resources are bundled under
+`skills/codex-collab-conductor/`:
+
+- `skills/codex-collab-conductor/SKILL.md`: the skill entrypoint.
+- `skills/codex-collab-conductor/agents/openai.yaml`: Codex UI metadata and implicit
+  invocation policy.
+- `skills/codex-collab-conductor/references/routing.md`: execution shape and assurance
+  decisions.
+- `skills/codex-collab-conductor/references/model-lanes.md`: the sole detailed model-routing
+  policy.
+- `skills/codex-collab-conductor/references/task-packets.md`: self-contained native child
+  briefs.
+- `skills/codex-collab-conductor/references/assurance.md`: parent verification and optional
+  fresh-review gates.
+- `skills/codex-collab-conductor/references/fallback-states.md`: optional v1 diagnostic
+  state and fallback guidance.
+- `skills/codex-collab-conductor/scripts/inspect_child_runtime.py`: allowlisted child routing
+  evidence inspector.
+- `skills/codex-collab-conductor/scripts/validate_lane_receipt.py`: v1 lane-diagnostic
+  validator.
+- `skills/codex-collab-conductor/scripts/validate_route_manifest.py`: v1 route-diagnostic
+  validator.
+- `skills/codex-collab-conductor/evals/canary/`: manual native canary fixtures, playbook,
+  and result materials.
 - `tests/`: standard-library regression tests for policy structure and diagnostic
   boundaries.
 
@@ -51,16 +67,58 @@ Supporting resources are discoverable from that skill:
 
 ## Install
 
-Clone directly into the personal Codex skills directory:
+### Plugin installation
 
-    git clone https://github.com/devy1540/codex-collab-conductor.git \
-      "$HOME/.codex/skills/codex-collab-conductor"
+Clone the repository into the personal plugin source target and verify the nested
+manifest and skill before installing it:
+
+    (
+      set -eu
+      TARGET_DIR="$HOME/plugins/codex-collab-conductor"
+      if [ -e "$TARGET_DIR" ] || [ -L "$TARGET_DIR" ]; then
+        printf 'Refusing: exact plugin target already exists: %s\n' "$TARGET_DIR" >&2
+        exit 1
+      fi
+      mkdir -p "$(dirname "$TARGET_DIR")"
+      git clone https://github.com/devy1540/codex-collab-conductor.git "$TARGET_DIR"
+      test -f "$TARGET_DIR/.codex-plugin/plugin.json"
+      test -f "$TARGET_DIR/skills/codex-collab-conductor/SKILL.md"
+      codex plugin add codex-collab-conductor@personal
+    )
+
+This command assumes that the default personal marketplace at
+`$HOME/.agents/plugins/marketplace.json` already contains an entry whose local source is
+`./plugins/codex-collab-conductor` (the clone target above is
+`~/plugins/codex-collab-conductor`). On a first setup, creating or updating that
+marketplace entry is an explicit local-development step; cloning this GitHub repository
+does not create it and is not a one-click marketplace setup. Do not assume that another
+marketplace or plugin directory is available on every Codex host.
+
+### Standalone skill installation
+
+The bundled skill remains compatible with the original direct-clone path. Existing clean
+standalone clones can update with an ordinary `git pull`; the root compatibility symlinks
+continue to expose `SKILL.md`, `agents/`, `references/`, `scripts/`, and `evals/` from the
+canonical nested skill. A fresh standalone install uses the same path:
+
+    (
+      set -eu
+      TARGET_DIR="$HOME/.codex/skills/codex-collab-conductor"
+      if [ -e "$TARGET_DIR" ] || [ -L "$TARGET_DIR" ]; then
+        printf 'Refusing: exact skill target already exists: %s\n' "$TARGET_DIR" >&2
+        exit 1
+      fi
+      mkdir -p "$(dirname "$TARGET_DIR")"
+      git clone https://github.com/devy1540/codex-collab-conductor.git "$TARGET_DIR"
+      test -f "$TARGET_DIR/.codex-plugin/plugin.json"
+      test -f "$TARGET_DIR/SKILL.md"
+    )
 
 Restart Codex if the skill does not appear immediately.
 
 ## Automatic use
 
-`agents/openai.yaml` enables implicit invocation. Codex may select this skill when the
+`skills/codex-collab-conductor/agents/openai.yaml` enables implicit invocation. Codex may select this skill when the
 request matches the conservative policy, so users do not need to type the skill name on
 every task.
 
@@ -83,7 +141,7 @@ The repository does not modify `AGENTS.md` automatically.
 ## Model policy
 
 Task shape and assurance are selected before model routing. The complete, non-duplicated
-policy is in [`references/model-lanes.md`](references/model-lanes.md). The fast lane is a
+policy is in [`skills/codex-collab-conductor/references/model-lanes.md`](skills/codex-collab-conductor/references/model-lanes.md). The fast lane is a
 low-effort exploration route with one permitted pre-child unavailable/quota cross-model
 fallback. Bounded implementation is an explicit quality-first route only for
 decision-complete packets, standard judgment is the explicit route for judgment-heavy
@@ -105,17 +163,17 @@ paths.
 
 Inspect one exact child route when local Codex rollout files are available:
 
-    python3 scripts/inspect_child_runtime.py <child-thread-id>
+    python3 skills/codex-collab-conductor/scripts/inspect_child_runtime.py <child-thread-id>
 
 Use a non-default session root when needed:
 
-    python3 scripts/inspect_child_runtime.py <child-thread-id> \
+    python3 skills/codex-collab-conductor/scripts/inspect_child_runtime.py <child-thread-id> \
       --sessions-dir /absolute/path/to/sessions
 
 The v1 validators remain available for an explicitly requested diagnostic record:
 
-    python3 scripts/validate_lane_receipt.py /path/to/lane-receipt.json
-    python3 scripts/validate_route_manifest.py /path/to/route-manifest.json
+    python3 skills/codex-collab-conductor/scripts/validate_lane_receipt.py /path/to/lane-receipt.json
+    python3 skills/codex-collab-conductor/scripts/validate_route_manifest.py /path/to/route-manifest.json
 
 If a diagnostic cannot be represented by the existing v1 schema, omit it rather than
 fabricating evidence. Do not treat an omitted diagnostic as proof that routing happened.
@@ -136,7 +194,7 @@ fabricating evidence. Do not treat an omitted diagnostic as proof that routing h
 
 ## Manual native canary
 
-`evals/canary/` is a privacy-safe manual release gate with six deterministic,
+`skills/codex-collab-conductor/evals/canary/` is a privacy-safe manual release gate with six deterministic,
 read-only synthetic fixtures: solo guard, parallel fast read, fast route/fallback,
 bounded implementation, standard judgment, and frontier seeded-defect review.
 Run one functional execution per scenario and record only the fields in the result schema:
@@ -154,7 +212,13 @@ such claim.
 Validate the skill package:
 
     uv run --no-project --with pyyaml python \
-      "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" .
+      "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" \
+      skills/codex-collab-conductor
+
+Validate the plugin root:
+
+    uv run --no-project --with pyyaml python \
+      "$HOME/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py" .
 
 Run repository tests:
 
@@ -163,7 +227,7 @@ Run repository tests:
 Validate committed canary results against their Draft 2020-12 schema:
 
     uv run --no-project --with 'jsonschema==4.25.1' \
-      python scripts/validate_canary_results.py
+      python skills/codex-collab-conductor/scripts/validate_canary_results.py
 
 GitHub CI remains static compile, unit-test, CLI, and JSON Schema verification. It does not run the
 native canary or claim live runtime behavior.
