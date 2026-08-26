@@ -116,13 +116,46 @@ class PluginContractTests(unittest.TestCase):
         normalized_readme = " ".join(readme.split())
         self.assertIn("ordinary `git pull`", normalized_readme)
         self.assertIn("original direct-clone path", normalized_readme)
-        self.assertGreaterEqual(readme.count("set -eu"), 2)
-        self.assertIn('test -f "$TARGET_DIR/.codex-plugin/plugin.json"', readme)
+        self.assertGreaterEqual(readme.count("set -eu"), 1)
         self.assertIn(
-            'test -f "$TARGET_DIR/skills/codex-collab-conductor/SKILL.md"',
+            "codex plugin marketplace add devy1540/codex-collab-conductor --ref main",
+            readme,
+        )
+        self.assertIn(
+            "codex plugin add codex-collab-conductor@devy1540",
             readme,
         )
         self.assertIn('test -f "$TARGET_DIR/SKILL.md"', readme)
+
+    def test_public_marketplace_contract(self) -> None:
+        marketplace_path = REPO_ROOT / ".agents/plugins/marketplace.json"
+        marketplace = json.loads(marketplace_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(marketplace["name"], "devy1540")
+        self.assertEqual(
+            marketplace["interface"],
+            {"displayName": "devy1540 Plugins"},
+        )
+        self.assertEqual(len(marketplace["plugins"]), 1)
+
+        plugin = marketplace["plugins"][0]
+        self.assertEqual(plugin["name"], "codex-collab-conductor")
+        self.assertEqual(
+            plugin["source"],
+            {
+                "source": "url",
+                "url": "https://github.com/devy1540/codex-collab-conductor.git",
+                "ref": "v0.1.0",
+            },
+        )
+        self.assertEqual(
+            plugin["policy"],
+            {
+                "installation": "AVAILABLE",
+                "authentication": "ON_INSTALL",
+            },
+        )
+        self.assertEqual(plugin["category"], "Productivity")
 
 
 if __name__ == "__main__":

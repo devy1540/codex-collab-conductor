@@ -69,30 +69,20 @@ The one actual skill and all of its supporting resources are bundled under
 
 ### Plugin installation
 
-Clone the repository into the personal plugin source target and verify the nested
-manifest and skill before installing it:
+Add the public GitHub marketplace, verify the pinned plugin is available, and install it:
 
-    (
-      set -eu
-      TARGET_DIR="$HOME/plugins/codex-collab-conductor"
-      if [ -e "$TARGET_DIR" ] || [ -L "$TARGET_DIR" ]; then
-        printf 'Refusing: exact plugin target already exists: %s\n' "$TARGET_DIR" >&2
-        exit 1
-      fi
-      mkdir -p "$(dirname "$TARGET_DIR")"
-      git clone https://github.com/devy1540/codex-collab-conductor.git "$TARGET_DIR"
-      test -f "$TARGET_DIR/.codex-plugin/plugin.json"
-      test -f "$TARGET_DIR/skills/codex-collab-conductor/SKILL.md"
-      codex plugin add codex-collab-conductor@personal
-    )
+    codex plugin marketplace add devy1540/codex-collab-conductor --ref main
+    codex plugin list --marketplace devy1540 --available
+    codex plugin add codex-collab-conductor@devy1540
 
-This command assumes that the default personal marketplace at
-`$HOME/.agents/plugins/marketplace.json` already contains an entry whose local source is
-`./plugins/codex-collab-conductor` (the clone target above is
-`~/plugins/codex-collab-conductor`). On a first setup, creating or updating that
-marketplace entry is an explicit local-development step; cloning this GitHub repository
-does not create it and is not a one-click marketplace setup. Do not assume that another
-marketplace or plugin directory is available on every Codex host.
+The marketplace catalog is tracked at `.agents/plugins/marketplace.json`. It follows
+`main`, while the plugin source is pinned to the release tag that matches the manifest
+version. Start a new Codex task after installation so the bundled skill is loaded.
+
+To pick up a later release, refresh the marketplace snapshot and reinstall the plugin:
+
+    codex plugin marketplace upgrade devy1540
+    codex plugin add codex-collab-conductor@devy1540
 
 ### Standalone skill installation
 
