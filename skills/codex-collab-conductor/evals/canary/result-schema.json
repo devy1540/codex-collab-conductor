@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "ccc-native-canary-result-v1",
+  "$id": "ccc-native-canary-result-v2",
   "title": "CCC native canary result",
   "description": "Redacted result fields for one manual synthetic canary execution. Final values must be filled by the parent after one functional run.",
   "type": "object",
@@ -9,25 +9,21 @@
     "schema_version",
     "scenario_id",
     "fixture_sha256",
-    "route",
+    "execution_route",
+    "capability_lane",
+    "assurance_route",
     "expected_child_count",
     "observed_child_count",
     "children_distinct",
     "worktree_unchanged",
-    "requested_model",
-    "resolved_model",
-    "requested_effort",
-    "resolved_effort",
-    "fallback",
-    "failure_class",
-    "verification",
+    "lane_observations",
     "task_result",
     "wall_time_ms",
     "parent_rework"
   ],
   "properties": {
     "schema_version": {
-      "const": "ccc-native-canary-result-v1"
+      "const": "ccc-native-canary-result-v2"
     },
     "scenario_id": {
       "enum": [
@@ -43,14 +39,32 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
     },
-    "route": {
+    "execution_route": {
+      "description": "The task execution shape selected before model routing; null for a capability-only diagnostic scenario.",
       "enum": [
+        null,
         "solo",
         "parallel-read",
+        "delegated-build",
+        "plan-run"
+      ]
+    },
+    "capability_lane": {
+      "description": "The capability and model lane selected after execution and assurance routing; null when no child model is requested.",
+      "enum": [
+        null,
         "fast",
-        "bounded",
+        "bounded_implementation",
         "standard",
         "frontier"
+      ]
+    },
+    "assurance_route": {
+      "description": "The assurance choice, kept separate from execution shape and capability routing.",
+      "enum": [
+        "parent-check",
+        "independent-review",
+        "dual-review"
       ]
     },
     "expected_child_count": {
@@ -71,72 +85,104 @@
       "description": "True when the post-scenario worktree state exactly matches its pre-scenario baseline; the baseline need not be clean.",
       "type": "boolean"
     },
-    "requested_model": {
-      "description": "The explicit model request, never a claim about runtime resolution.",
-      "enum": [
-        null,
-        "gpt-5.3-codex-spark",
-        "gpt-5.6-luna",
-        "gpt-5.6-terra",
-        "gpt-5.6-sol"
-      ]
-    },
-    "resolved_model": {
-      "description": "The observed runtime model when the host exposes it; null when unavailable.",
-      "enum": [
-        null,
-        "gpt-5.3-codex-spark",
-        "gpt-5.6-luna",
-        "gpt-5.6-terra",
-        "gpt-5.6-sol"
-      ]
-    },
-    "requested_effort": {
-      "enum": [
-        null,
-        "low",
-        "high",
-        "xhigh",
-        "max"
-      ]
-    },
-    "resolved_effort": {
-      "enum": [
-        null,
-        "none",
-        "minimal",
-        "low",
-        "medium",
-        "high",
-        "xhigh",
-        "max",
-        "ultra"
-      ]
-    },
-    "fallback": {
-      "enum": [
-        "none",
-        "spark_to_luna"
-      ]
-    },
-    "failure_class": {
-      "enum": [
-        "none",
-        "model_unavailable",
-        "quota_denied",
-        "capacity",
-        "timeout",
-        "child_error",
-        "evidence_missing",
-        "unknown"
-      ]
-    },
-    "verification": {
-      "description": "Routing-evidence outcome only; this is not a task-result verdict.",
-      "enum": [
-        "VERIFIED",
-        "NOT_VERIFIED"
-      ]
+    "lane_observations": {
+      "description": "Privacy-safe per-lane routing observations. Lane names come from synthetic fixtures; child and turn identifiers are forbidden.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lane",
+          "requested_model",
+          "resolved_model",
+          "requested_effort",
+          "resolved_effort",
+          "fallback",
+          "fallback_cause",
+          "failure_class",
+          "verification"
+        ],
+        "properties": {
+          "lane": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          },
+          "requested_model": {
+            "description": "The explicit primary model request, never a claim about runtime resolution.",
+            "enum": [
+              "gpt-5.3-codex-spark",
+              "gpt-5.6-luna",
+              "gpt-5.6-terra",
+              "gpt-5.6-sol"
+            ]
+          },
+          "resolved_model": {
+            "description": "The observed final runtime model; null when routing evidence is unavailable.",
+            "enum": [
+              null,
+              "gpt-5.3-codex-spark",
+              "gpt-5.6-luna",
+              "gpt-5.6-terra",
+              "gpt-5.6-sol"
+            ]
+          },
+          "requested_effort": {
+            "enum": [
+              "low",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          },
+          "resolved_effort": {
+            "enum": [
+              null,
+              "none",
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max",
+              "ultra"
+            ]
+          },
+          "fallback": {
+            "enum": [
+              "none",
+              "spark_to_luna"
+            ]
+          },
+          "fallback_cause": {
+            "description": "Cause that made the single permitted fast fallback eligible.",
+            "enum": [
+              "none",
+              "model_unavailable",
+              "quota_denied"
+            ]
+          },
+          "failure_class": {
+            "description": "Final lane failure after any permitted fallback; none for a successful lane.",
+            "enum": [
+              "none",
+              "model_unavailable",
+              "quota_denied",
+              "capacity",
+              "timeout",
+              "child_error",
+              "evidence_missing",
+              "unknown"
+            ]
+          },
+          "verification": {
+            "description": "Routing-evidence outcome only; this is not a task-result verdict.",
+            "enum": [
+              "VERIFIED",
+              "NOT_VERIFIED"
+            ]
+          }
+        }
+      }
     },
     "task_result": {
       "description": "Whether the parent judged the synthetic functional task PASS or FAIL.",

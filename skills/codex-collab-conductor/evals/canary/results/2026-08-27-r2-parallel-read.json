@@ -1,0 +1,39 @@
+{
+  "schema_version": "ccc-native-canary-result-v2",
+  "scenario_id": "parallel-read",
+  "fixture_sha256": "61172206593cca08a2f87be064e783d59ef9adad9feb741e9e635333893abf1f",
+  "execution_route": "parallel-read",
+  "capability_lane": "fast",
+  "assurance_route": "parent-check",
+  "expected_child_count": 2,
+  "observed_child_count": 2,
+  "children_distinct": true,
+  "worktree_unchanged": true,
+  "lane_observations": [
+    {
+      "lane": "alpha",
+      "requested_model": "gpt-5.3-codex-spark",
+      "resolved_model": "gpt-5.6-luna",
+      "requested_effort": "low",
+      "resolved_effort": "low",
+      "fallback": "spark_to_luna",
+      "fallback_cause": "quota_denied",
+      "failure_class": "none",
+      "verification": "VERIFIED"
+    },
+    {
+      "lane": "beta",
+      "requested_model": "gpt-5.3-codex-spark",
+      "resolved_model": "gpt-5.6-luna",
+      "requested_effort": "low",
+      "resolved_effort": "low",
+      "fallback": "spark_to_luna",
+      "fallback_cause": "quota_denied",
+      "failure_class": "none",
+      "verification": "VERIFIED"
+    }
+  ],
+  "task_result": "PASS",
+  "wall_time_ms": 55724,
+  "parent_rework": "none"
+}

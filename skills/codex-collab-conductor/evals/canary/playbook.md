@@ -8,8 +8,9 @@ fabricate routing evidence, or run the package as a benchmark.
 
 All fixture inputs are synthetic and read-only. Before each scenario, record the start
 time locally for wall-time measurement; after the scenario, write only the fields in
-`result-schema.json`. Record the fixture SHA-256, expected/observed child counts,
-distinctness, requested/resolved effort, and whether the repository state remained
+`result-schema.json`. Record the fixture SHA-256, execution route, capability lane,
+assurance route, expected/observed child counts, distinctness, requested/resolved effort,
+and whether the repository state remained
 identical to its pre-scenario baseline. The baseline may already contain the intended
 implementation diff; the canary itself must introduce no change.
 Do not copy task prompts, child IDs, local paths, or transcripts
@@ -24,6 +25,12 @@ the same solo baseline have been completed and reviewed separately.
 For every non-solo scenario, the parent chooses the execution shape and assurance before
 choosing a model. The parent remains responsible for the final task result and any
 rework. A child report or a runtime routing observation is not acceptance proof.
+Scenarios that isolate only one capability lane use `execution_route: null`; they do not
+claim that a one-child diagnostic is a new CCC execution shape.
+Record one `lane_observations` entry for every synthetic lane named by the fixture. The
+entry keeps the primary model request, final resolved model, fallback cause, final failure
+class, and verification separate. This permits two parallel lanes to resolve differently
+without recording native child or turn IDs.
 
 ## Scenario procedure
 
@@ -34,7 +41,9 @@ Fixture: `fixtures/solo-guard.json`
 Use no native child. Classify the synthetic small, tightly coupled task directly in the
 parent. Expected outcome:
 
-- route: `solo`
+- execution route: `solo`
+- capability lane: `null`
+- assurance route: `parent-check`
 - requested/resolved model: `null` unless the host exposes an unrelated parent value;
   do not invent one
 - task result: `PASS` when the parent keeps the work solo
@@ -54,9 +63,11 @@ Spark/low and use at most one pre-child unavailable/quota Luna/low fallback per 
 Spawn the selected lanes before doing the task-specific investigation, wait only on
 confirmed child IDs, and have the parent reconcile both answers. Expected outcome:
 
-- route: `parallel-read`
+- execution route: `parallel-read`
+- capability lane: `fast`
+- assurance route: `parent-check`
 - requested model: the explicit Spark fast request
-- resolved model: the observed Spark or permitted Luna fallback
+- resolved model: the observed Spark or permitted Luna fallback for each lane
 - task result: `PASS` when both independent answers match the fixture's expected values
   and the parent reconciles them
 - verification: `VERIFIED` only when the parent has the routing evidence it chose to
@@ -78,10 +89,14 @@ according to the actual evidence.
 
 Expected outcome:
 
-- route: `fast`
+- execution route: `null`; this is a capability-only diagnostic
+- capability lane: `fast`
+- assurance route: `parent-check`
 - requested model: the primary fast request, even when the permitted fallback is used
 - resolved model: the observed model, or null when unavailable
 - fallback: `none` or the single permitted fast fallback
+- fallback cause: `model_unavailable` or `quota_denied` only when fallback is used
+- failure class: the final lane failure after fallback, or `none` when it succeeds
 - task result: `PASS` only when the synthetic classification is correct
 - verification: `VERIFIED` only when the selected runtime evidence is available
 
@@ -96,7 +111,9 @@ Use a decision-complete bounded implementation packet and request Luna/max expli
 The child must implement only the synthetic contract. If it reports a missing material
 decision, stop with `NEEDS_DECISION`; do not silently change models. Expected outcome:
 
-- route: `bounded`
+- execution route: `delegated-build`
+- capability lane: `bounded_implementation`
+- assurance route: `parent-check`
 - requested/resolved model: explicit and observed Luna
 - requested/resolved effort: `max`
 - fallback: `none`
@@ -114,7 +131,9 @@ integration decision. If the work expands into architecture, security, concurren
 other high-risk judgment, stop for parent reassessment rather than switching to Sol.
 Expected outcome:
 
-- route: `standard`
+- execution route: `null`; this is a capability-only diagnostic
+- capability lane: `standard`
+- assurance route: `parent-check`
 - requested/resolved model: explicit and observed Terra
 - requested/resolved effort: `high`
 - fallback: `none`
@@ -133,7 +152,9 @@ fixture contract and rerun the check.
 
 Expected outcome:
 
-- route: `frontier`
+- execution route: `null`; this is a deferred review capability diagnostic
+- capability lane: `frontier`
+- assurance route: `independent-review`
 - requested model: the explicit Sol request
 - resolved model: observed only from runtime metadata
 - task result: `PASS` when the review identifies the empty-input defect and the parent
@@ -145,8 +166,10 @@ Expected outcome:
 ## Result recording
 
 Copy `result-template.json` once per scenario. Fill every field with the observed,
-redacted value. `wall_time_ms` is the single functional run's elapsed wall time, not a
+redacted value and add one lane observation for every fixture lane. `wall_time_ms` is the
+single functional run's elapsed wall time, not a
 throughput claim. `parent_rework` is only the coarse category in the schema. Keep the
 result file free of prompts, child IDs, local paths, transcripts, and other execution
 details. The parent should review the complete set and state any unavailable proof; the
-canary package itself does not declare the policy proven.
+default validator establishes observation validity only. Use `--release-gate` separately
+to decide whether the committed observation set satisfies the release gate.

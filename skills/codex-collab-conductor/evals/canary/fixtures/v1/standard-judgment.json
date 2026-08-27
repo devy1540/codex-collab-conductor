@@ -1,5 +1,5 @@
 {
-  "fixture_version": "ccc-native-canary-fixture-v2",
+  "fixture_version": "ccc-native-canary-fixture-v1",
   "scenario_id": "standard-judgment",
   "data_classification": "synthetic-public",
   "mode": "read-only",
@@ -10,13 +10,9 @@
   },
   "expected_decision": "preserve the item key across retries and verify idempotency at the boundary",
   "route_policy": {
-    "execution_route": null,
-    "capability_lane": "standard",
-    "assurance_route": "parent-check",
-    "lanes": ["judgment"],
-    "requested_model": "gpt-5.6-terra",
-    "requested_effort": "high",
-    "expected_child_count": 1,
+    "execution_route": "standard",
+    "model_request": "gpt-5.6-terra",
+    "reasoning_effort": "high",
     "high_risk_expansion_behavior": "STOP_FOR_PARENT_REASSESSMENT"
   },
   "expected": {

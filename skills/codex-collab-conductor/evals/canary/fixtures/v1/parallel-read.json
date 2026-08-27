@@ -1,6 +1,5 @@
 {
-  "fixture_version": "ccc-native-canary-fixture-v2",
-  "fixture_revision": 2,
+  "fixture_version": "ccc-native-canary-fixture-v1",
   "scenario_id": "parallel-read",
   "data_classification": "synthetic-public",
   "mode": "read-only",
@@ -8,30 +7,27 @@
     {
       "lane": "alpha",
       "operation": "count",
-      "operation_definition": "Return the number of elements. Do not add the values.",
       "values": [2, 4, 6, 8],
       "expected": 4
     },
     {
       "lane": "beta",
       "operation": "sum",
-      "operation_definition": "Add the numeric values and return their arithmetic sum.",
       "values": [3, 5, 7],
       "expected": 15
     }
   ],
   "route_policy": {
-    "execution_route": "parallel-read",
     "capability_lane": "fast",
-    "assurance_route": "parent-check",
-    "lanes": ["alpha", "beta"],
-    "requested_model": "gpt-5.3-codex-spark",
-    "requested_effort": "low",
-    "expected_child_count": 2,
+    "primary_model": "gpt-5.3-codex-spark",
+    "reasoning_effort": "low",
     "fallback_model": "gpt-5.6-luna",
     "max_cross_model_fallbacks_per_lane": 1
   },
   "expected": {
+    "execution_route": "parallel-read",
+    "assurance": "parent-check",
+    "native_children": 2,
     "task_result": "PASS"
   }
 }

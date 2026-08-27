@@ -1,5 +1,5 @@
 {
-  "fixture_version": "ccc-native-canary-fixture-v2",
+  "fixture_version": "ccc-native-canary-fixture-v1",
   "scenario_id": "solo-guard",
   "data_classification": "synthetic-public",
   "mode": "read-only",
@@ -9,16 +9,10 @@
     "shared_mutable_state": false,
     "tightly_coupled": true
   },
-  "route_policy": {
-    "execution_route": "solo",
-    "capability_lane": null,
-    "assurance_route": "parent-check",
-    "lanes": [],
-    "requested_model": null,
-    "requested_effort": null,
-    "expected_child_count": 0
-  },
   "expected": {
+    "execution_route": "solo",
+    "assurance": "parent-check",
+    "native_children": 0,
     "task_result": "PASS"
   }
 }

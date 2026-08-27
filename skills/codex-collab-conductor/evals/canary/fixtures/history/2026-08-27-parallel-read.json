@@ -1,6 +1,5 @@
 {
   "fixture_version": "ccc-native-canary-fixture-v2",
-  "fixture_revision": 2,
   "scenario_id": "parallel-read",
   "data_classification": "synthetic-public",
   "mode": "read-only",
@@ -8,14 +7,12 @@
     {
       "lane": "alpha",
       "operation": "count",
-      "operation_definition": "Return the number of elements. Do not add the values.",
       "values": [2, 4, 6, 8],
       "expected": 4
     },
     {
       "lane": "beta",
       "operation": "sum",
-      "operation_definition": "Add the numeric values and return their arithmetic sum.",
       "values": [3, 5, 7],
       "expected": 15
     }

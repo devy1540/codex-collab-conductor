@@ -37,7 +37,15 @@ MODELS = {
     "gpt-5.6-sol",
 }
 EFFORTS = {"low", "medium", "high", "xhigh", "max"}
-CAUSES = {"none", "capacity", "model_unavailable", "timeout", "child_error", "evidence_missing"}
+CAUSES = {
+    "none",
+    "capacity",
+    "model_unavailable",
+    "quota_denied",
+    "timeout",
+    "child_error",
+    "evidence_missing",
+}
 CAPABILITIES = {"fast", "bounded_implementation", "standard", "frontier"}
 CAPABILITY_ROUTES = {
     "fast": {
@@ -145,7 +153,7 @@ def _validate_attempt(
         attempt["child_id"] is None or _valid_thread_id(attempt["child_id"]),
         "failed attempt child id is invalid",
     )
-    if attempt["cause"] in {"model_unavailable", "capacity"}:
+    if attempt["cause"] in {"model_unavailable", "quota_denied", "capacity"}:
         _require(attempt["child_id"] is None, "pre-spawn failure cannot have child id")
         _require(attempt["turn_id"] is None, "pre-spawn failure cannot have turn id")
         _require(attempt["resolved_model"] is None, "pre-spawn failure cannot resolve model")
@@ -225,12 +233,21 @@ def validate_receipt(receipt: Any, sessions_dir: Path) -> dict[str, Any]:
 
     if receipt["fallback_used"] == "none":
         _require(len(receipt["attempts"]) == 1, "no-fallback lane must have one attempt")
+        if receipt["capability"] == "fast":
+            _require(
+                receipt["attempts"][0]["cause"]
+                not in {"model_unavailable", "quota_denied"},
+                "eligible fast failure requires the permitted fallback attempt",
+            )
     else:
         _require(receipt["capability"] == "fast", "only fast lane may use Spark fallback")
         _require(len(receipt["attempts"]) == 2, "Spark fallback requires two attempts")
         first, second = receipt["attempts"]
         _require(first["state"] == "FAILED", "first fallback attempt must fail")
-        _require(first["cause"] == "model_unavailable", "fallback requires model_unavailable")
+        _require(
+            first["cause"] in {"model_unavailable", "quota_denied"},
+            "fallback requires model_unavailable or quota_denied",
+        )
         _require(first["requested_model"] == "gpt-5.3-codex-spark", "first model must be Spark")
         _require(second["requested_model"] == "gpt-5.6-luna", "fallback model must be Luna")
 

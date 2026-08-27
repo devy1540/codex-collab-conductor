@@ -49,7 +49,7 @@ class PolicyContractTests(unittest.TestCase):
             self.assertTrue((canary / relative).is_file(), relative)
 
         schema = json.loads((canary / "result-schema.json").read_text(encoding="utf-8"))
-        self.assertEqual(schema["$id"], "ccc-native-canary-result-v1")
+        self.assertEqual(schema["$id"], "ccc-native-canary-result-v2")
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(
             set(schema["required"]),
@@ -57,18 +57,14 @@ class PolicyContractTests(unittest.TestCase):
                 "schema_version",
                 "scenario_id",
                 "fixture_sha256",
-                "route",
+                "execution_route",
+                "capability_lane",
+                "assurance_route",
                 "expected_child_count",
                 "observed_child_count",
                 "children_distinct",
                 "worktree_unchanged",
-                "requested_model",
-                "resolved_model",
-                "requested_effort",
-                "resolved_effort",
-                "fallback",
-                "failure_class",
-                "verification",
+                "lane_observations",
                 "task_result",
                 "wall_time_ms",
                 "parent_rework",
@@ -108,50 +104,72 @@ class PolicyContractTests(unittest.TestCase):
             by_scenario[scenario] = payload
             self.assertEqual(payload["fixture_sha256"], fixture_hashes[scenario])
             self.assertTrue(payload["worktree_unchanged"])
-            self.assertEqual(payload["task_result"], "PASS")
             self.assertEqual(payload["observed_child_count"], payload["expected_child_count"])
             text = result_path.read_text(encoding="utf-8")
             for forbidden in ["/Users/", "child_id", "turn_id", "prompt", "transcript"]:
                 self.assertNotIn(forbidden, text)
         self.assertEqual(observed_results, scenario_ids)
         solo = by_scenario["solo-guard"]
+        self.assertEqual(solo["execution_route"], "solo")
+        self.assertIsNone(solo["capability_lane"])
+        self.assertEqual(solo["assurance_route"], "parent-check")
         self.assertEqual((solo["expected_child_count"], solo["observed_child_count"]), (0, 0))
         self.assertIsNone(solo["children_distinct"])
-        self.assertEqual(solo["verification"], "NOT_VERIFIED")
+        self.assertEqual(solo["lane_observations"], [])
 
         parallel = by_scenario["parallel-read"]
+        self.assertEqual(parallel["execution_route"], "parallel-read")
+        self.assertEqual(parallel["capability_lane"], "fast")
+        self.assertEqual(parallel["assurance_route"], "parent-check")
         self.assertEqual(
             (parallel["expected_child_count"], parallel["observed_child_count"]),
             (2, 2),
         )
         self.assertTrue(parallel["children_distinct"])
+        self.assertEqual(parallel["task_result"], "PASS")
+        self.assertEqual(parallel["parent_rework"], "none")
+        self.assertEqual(
+            [lane["lane"] for lane in parallel["lane_observations"]],
+            ["alpha", "beta"],
+        )
 
         fast = by_scenario["fast-route-fallback"]
+        self.assertIsNone(fast["execution_route"])
+        self.assertEqual(fast["capability_lane"], "fast")
         self.assertEqual((fast["expected_child_count"], fast["observed_child_count"]), (1, 1))
         self.assertIsNone(fast["children_distinct"])
-        self.assertEqual(fast["fallback"], "spark_to_luna")
-        self.assertEqual(fast["failure_class"], "quota_denied")
+        self.assertEqual(fast["lane_observations"][0]["fallback"], "spark_to_luna")
+        self.assertEqual(fast["lane_observations"][0]["fallback_cause"], "quota_denied")
+        self.assertEqual(fast["lane_observations"][0]["failure_class"], "none")
 
         bounded = by_scenario["bounded-implementation"]
-        self.assertEqual(bounded["route"], "bounded")
-        self.assertEqual(bounded["requested_model"], "gpt-5.6-luna")
-        self.assertEqual(bounded["requested_effort"], "max")
-        self.assertEqual(bounded["fallback"], "none")
+        self.assertEqual(bounded["execution_route"], "delegated-build")
+        self.assertEqual(bounded["capability_lane"], "bounded_implementation")
+        self.assertEqual(bounded["assurance_route"], "parent-check")
+        bounded_lane = bounded["lane_observations"][0]
+        self.assertEqual(bounded_lane["requested_model"], "gpt-5.6-luna")
+        self.assertEqual(bounded_lane["requested_effort"], "max")
+        self.assertEqual(bounded_lane["fallback"], "none")
 
         judgment = by_scenario["standard-judgment"]
-        self.assertEqual(judgment["route"], "standard")
-        self.assertEqual(judgment["requested_model"], "gpt-5.6-terra")
-        self.assertEqual(judgment["requested_effort"], "high")
-        self.assertEqual(judgment["fallback"], "none")
-        self.assertEqual(judgment["failure_class"], "none")
+        self.assertIsNone(judgment["execution_route"])
+        self.assertEqual(judgment["capability_lane"], "standard")
+        judgment_lane = judgment["lane_observations"][0]
+        self.assertEqual(judgment_lane["requested_model"], "gpt-5.6-terra")
+        self.assertEqual(judgment_lane["requested_effort"], "high")
+        self.assertEqual(judgment_lane["fallback"], "none")
+        self.assertEqual(judgment_lane["failure_class"], "none")
 
         frontier = by_scenario["frontier-seeded-defect-review"]
-        self.assertEqual(frontier["route"], "frontier")
-        self.assertEqual(frontier["requested_model"], "gpt-5.6-sol")
-        self.assertEqual(frontier["resolved_model"], "gpt-5.6-sol")
-        self.assertEqual(frontier["requested_effort"], "high")
-        self.assertEqual(frontier["resolved_effort"], "high")
-        self.assertEqual(frontier["fallback"], "none")
+        self.assertIsNone(frontier["execution_route"])
+        self.assertEqual(frontier["capability_lane"], "frontier")
+        self.assertEqual(frontier["assurance_route"], "independent-review")
+        frontier_lane = frontier["lane_observations"][0]
+        self.assertEqual(frontier_lane["requested_model"], "gpt-5.6-sol")
+        self.assertEqual(frontier_lane["resolved_model"], "gpt-5.6-sol")
+        self.assertEqual(frontier_lane["requested_effort"], "high")
+        self.assertEqual(frontier_lane["resolved_effort"], "high")
+        self.assertEqual(frontier_lane["fallback"], "none")
 
         validate_semantics = runpy.run_path(
             str(SKILL_ROOT / "scripts" / "validate_canary_results.py")
@@ -160,27 +178,29 @@ class PolicyContractTests(unittest.TestCase):
             validate_semantics(payload)
 
         invalid_fast = copy.deepcopy(fast)
-        invalid_fast["route"] = "solo"
+        invalid_fast["capability_lane"] = "frontier"
         with self.assertRaises(ValueError):
             validate_semantics(invalid_fast)
 
         invalid_frontier = copy.deepcopy(frontier)
-        invalid_frontier["verification"] = "NOT_VERIFIED"
+        invalid_frontier["lane_observations"][0]["verification"] = "NOT_VERIFIED"
         with self.assertRaises(ValueError):
             validate_semantics(invalid_frontier)
 
         invalid_bounded = copy.deepcopy(bounded)
-        invalid_bounded["resolved_model"] = "gpt-5.6-sol"
+        invalid_bounded["lane_observations"][0]["resolved_model"] = "gpt-5.6-sol"
         with self.assertRaises(ValueError):
             validate_semantics(invalid_bounded)
 
         invalid_judgment = copy.deepcopy(judgment)
-        invalid_judgment["requested_effort"] = "xhigh"
+        invalid_judgment["lane_observations"][0]["requested_effort"] = "xhigh"
         with self.assertRaises(ValueError):
             validate_semantics(invalid_judgment)
 
         leaked_identifier = copy.deepcopy(parallel)
-        leaked_identifier["resolved_model"] = "00000000-0000-0000-0000-000000000000"
+        leaked_identifier["lane_observations"][0]["resolved_model"] = (
+            "00000000-0000-0000-0000-000000000000"
+        )
         with self.assertRaises(ValueError):
             validate_semantics(leaked_identifier)
 

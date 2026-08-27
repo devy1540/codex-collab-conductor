@@ -23,9 +23,9 @@ mapping, log classification, large-input triage, and formatting review.
   that event a fast fallback.
 - Do not change a global default to obtain Spark. Route this lane per spawn call.
 
-The pre-child fallback is a resilience rule, not a speed or quality claim. If the host
-reports a quota condition that cannot be represented by the existing v1 diagnostic
-causes, omit the optional receipt instead of inventing a cause.
+The pre-child fallback is a resilience rule, not a speed or quality claim. The optional
+v1 diagnostic records a host-reported pre-child quota rejection as `quota_denied`; do not
+infer or invent that cause from a timeout or child error.
 
 ## Bounded implementation lane
 

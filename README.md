@@ -188,8 +188,9 @@ fabricating evidence. Do not treat an omitted diagnostic as proof that routing h
 read-only synthetic fixtures: solo guard, parallel fast read, fast route/fallback,
 bounded implementation, standard judgment, and frontier seeded-defect review.
 Run one functional execution per scenario and record only the fields in the result schema:
-route, requested model, resolved model, task `PASS`/`FAIL`, wall time, parent rework, and
-verification status.
+execution route, capability lane, assurance route, requested/resolved model, task
+`PASS`/`FAIL`, wall time, parent rework, and per-lane verification status. Multi-lane
+results keep one privacy-safe routing observation per synthetic lane, without child IDs.
 
 Do not store prompts, child IDs, local paths, or transcripts in canary results. The
 canary is not simulated in CI. One canary run does not justify a general correctness or
@@ -219,8 +220,15 @@ Validate committed canary results against their Draft 2020-12 schema:
     uv run --no-project --with 'jsonschema==4.25.1' \
       python skills/codex-collab-conductor/scripts/validate_canary_results.py
 
-GitHub CI remains static compile, unit-test, CLI, and JSON Schema verification. It does not run the
-native canary or claim live runtime behavior.
+Evaluate the separately defined release gate after the observations are valid. This is
+also exposed as the manually dispatched `.github/workflows/release-gate.yml` workflow:
+
+    uv run --no-project --with 'jsonschema==4.25.1' \
+      python skills/codex-collab-conductor/scripts/validate_canary_results.py --release-gate
+
+GitHub CI remains static compile, unit-test, CLI, and JSON Schema verification. The
+manually dispatched release-gate workflow evaluates committed observations but does not
+run native children or claim live runtime behavior.
 
 ## Design boundary and license
 

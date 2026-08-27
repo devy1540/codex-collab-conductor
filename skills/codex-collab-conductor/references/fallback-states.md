@@ -42,6 +42,7 @@ The existing v1 cause values are:
 - `none`
 - `capacity`
 - `model_unavailable`
+- `quota_denied`
 - `timeout`
 - `child_error`
 - `evidence_missing`
@@ -67,8 +68,13 @@ reroute must be declared as a route decision, not hidden in a receipt. A bounded
 standard task that expands into high-risk judgment may lead to an explicitly
 parent-selected frontier route. Neither transition is automatic.
 
-If a host exposes quota as a cause that the existing v1 validator cannot represent, omit
-the optional receipt rather than fabricating `model_unavailable` or another value.
+When a required fast lane reports `model_unavailable` or `quota_denied` before child
+start, the v1 receipt must preserve that failed attempt and the one permitted Luna attempt.
+It must not end the lane after only the eligible Spark failure.
+
+The v1 validator represents a host-reported pre-child quota rejection as `quota_denied`.
+Do not infer quota from a timeout or a child error, and do not fabricate a cause when the
+host does not expose one.
 
 ## v1 lane receipt
 
@@ -88,7 +94,7 @@ When a parent explicitly chooses to record a diagnostic, use the existing
     attempts:
       - number: <1-based integer>
         state: SUCCEEDED | FAILED
-        cause: none | capacity | model_unavailable | timeout | child_error | evidence_missing
+        cause: none | capacity | model_unavailable | quota_denied | timeout | child_error | evidence_missing
         child_id: <id or null>
         turn_id: <turn UUID or null>
         requested_model: <model>

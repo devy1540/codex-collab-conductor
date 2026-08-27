@@ -1,5 +1,5 @@
 {
-  "fixture_version": "ccc-native-canary-fixture-v2",
+  "fixture_version": "ccc-native-canary-fixture-v1",
   "scenario_id": "frontier-seeded-defect-review",
   "data_classification": "synthetic-public",
   "mode": "read-only",
@@ -8,13 +8,9 @@
   "snippet": "def first_positive(values):\n    return next(value for value in values if value > 0)\n",
   "seeded_defect": "The implementation raises StopIteration for an empty or all-non-positive input instead of returning null.",
   "route_policy": {
-    "execution_route": null,
-    "capability_lane": "frontier",
-    "assurance_route": "independent-review",
-    "lanes": ["review"],
-    "requested_model": "gpt-5.6-sol",
-    "requested_effort": "high",
-    "expected_child_count": 1,
+    "execution_route": "frontier",
+    "model_request": "explicit-sol",
+    "reasoning_effort": "high",
     "xhigh_requires_concrete_need": true,
     "required_model_unavailable": "NOT_VERIFIED_WITHOUT_DOWNGRADE"
   },

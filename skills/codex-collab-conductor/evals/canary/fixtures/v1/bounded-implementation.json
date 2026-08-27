@@ -1,5 +1,5 @@
 {
-  "fixture_version": "ccc-native-canary-fixture-v2",
+  "fixture_version": "ccc-native-canary-fixture-v1",
   "scenario_id": "bounded-implementation",
   "data_classification": "synthetic-public",
   "mode": "read-only",
@@ -16,13 +16,9 @@
     "sample_output": ["a", "b", "c"]
   },
   "route_policy": {
-    "execution_route": "delegated-build",
-    "capability_lane": "bounded_implementation",
-    "assurance_route": "parent-check",
-    "lanes": ["implementation"],
-    "requested_model": "gpt-5.6-luna",
-    "requested_effort": "max",
-    "expected_child_count": 1,
+    "execution_route": "bounded",
+    "model_request": "gpt-5.6-luna",
+    "reasoning_effort": "max",
     "missing_decision_behavior": "NEEDS_DECISION"
   },
   "expected": {

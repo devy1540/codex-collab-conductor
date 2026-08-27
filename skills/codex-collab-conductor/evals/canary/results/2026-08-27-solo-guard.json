@@ -1,0 +1,16 @@
+{
+  "schema_version": "ccc-native-canary-result-v2",
+  "scenario_id": "solo-guard",
+  "fixture_sha256": "c3304200978205c53b8a0ac289d928004e8b6d40f42c25e4535d98ada5a2401a",
+  "execution_route": "solo",
+  "capability_lane": null,
+  "assurance_route": "parent-check",
+  "expected_child_count": 0,
+  "observed_child_count": 0,
+  "children_distinct": null,
+  "worktree_unchanged": true,
+  "lane_observations": [],
+  "task_result": "PASS",
+  "wall_time_ms": 0,
+  "parent_rework": "none"
+}

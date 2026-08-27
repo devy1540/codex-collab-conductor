@@ -182,6 +182,52 @@ class LaneReceiptTests(unittest.TestCase):
         ]
         self.assertEqual(self.validate(receipt)["state"], "SUCCEEDED")
 
+    def test_quota_denied_allows_spark_to_luna_fallback(self) -> None:
+        receipt = spark_success()
+        receipt["fallback_used"] = "spark_to_luna"
+        receipt["attempts"] = [
+            attempt(1, "FAILED", "quota_denied", SPARK, child_id=None, resolved_model=None),
+            attempt(2, "SUCCEEDED", "none", LUNA, child_id=CHILD_LUNA, resolved_model=LUNA),
+        ]
+        self.assertEqual(self.validate(receipt)["state"], "SUCCEEDED")
+
+    def test_quota_denied_requires_the_permitted_fallback_attempt(self) -> None:
+        receipt = spark_success()
+        receipt["state"] = "FAILED"
+        receipt["verification"] = "NOT_VERIFIED"
+        receipt["attempts"] = [
+            attempt(1, "FAILED", "quota_denied", SPARK, child_id=None, resolved_model=None),
+        ]
+        with self.assertRaises(MODULE.ReceiptError):
+            self.validate(receipt)
+
+    def test_quota_denied_cannot_claim_child_runtime_evidence(self) -> None:
+        receipt = spark_success()
+        receipt["fallback_used"] = "spark_to_luna"
+        receipt["attempts"] = [
+            attempt(
+                1,
+                "FAILED",
+                "quota_denied",
+                SPARK,
+                child_id=CHILD_SPARK,
+                resolved_model=SPARK,
+            ),
+            attempt(2, "SUCCEEDED", "none", LUNA, child_id=CHILD_LUNA, resolved_model=LUNA),
+        ]
+        with self.assertRaises(MODULE.ReceiptError):
+            self.validate(receipt)
+
+    def test_child_error_does_not_allow_model_fallback(self) -> None:
+        receipt = spark_success()
+        receipt["fallback_used"] = "spark_to_luna"
+        receipt["attempts"] = [
+            attempt(1, "FAILED", "child_error", SPARK, child_id=CHILD_SPARK, resolved_model=None),
+            attempt(2, "SUCCEEDED", "none", LUNA, child_id=CHILD_LUNA, resolved_model=LUNA),
+        ]
+        with self.assertRaises(MODULE.ReceiptError):
+            self.validate(receipt)
+
     def test_spark_to_luna_fallback_can_end_failed(self) -> None:
         receipt = spark_success()
         receipt["state"] = "FAILED"

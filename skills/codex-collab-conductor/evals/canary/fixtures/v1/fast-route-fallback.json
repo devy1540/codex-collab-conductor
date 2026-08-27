@@ -1,5 +1,5 @@
 {
-  "fixture_version": "ccc-native-canary-fixture-v2",
+  "fixture_version": "ccc-native-canary-fixture-v1",
   "scenario_id": "fast-route-fallback",
   "data_classification": "synthetic-public",
   "mode": "read-only",
@@ -12,18 +12,13 @@
     }
   },
   "route_policy": {
-    "execution_route": null,
-    "capability_lane": "fast",
-    "assurance_route": "parent-check",
-    "lanes": ["classification"],
-    "requested_model": "gpt-5.3-codex-spark",
-    "requested_effort": "low",
-    "expected_child_count": 1,
+    "primary": "fast",
     "fallback_trigger": "pre-child-unavailable-or-quota-only",
     "max_fallback_attempts": 1,
     "started_child_timeout_or_error_switch": false
   },
   "expected": {
+    "execution_route": "fast",
     "task_result": "PASS"
   }
 }

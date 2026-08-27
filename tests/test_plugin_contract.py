@@ -31,7 +31,7 @@ class PluginContractTests(unittest.TestCase):
             },
         )
         self.assertEqual(manifest["name"], "codex-collab-conductor")
-        self.assertEqual(manifest["version"], "0.1.0")
+        self.assertEqual(manifest["version"], "0.2.0")
         self.assertEqual(
             manifest["description"],
             "Conservative native collaboration for bounded Codex tasks.",
@@ -145,7 +145,7 @@ class PluginContractTests(unittest.TestCase):
             {
                 "source": "url",
                 "url": "https://github.com/devy1540/codex-collab-conductor.git",
-                "ref": "v0.1.0",
+                "ref": "v0.2.0",
             },
         )
         self.assertEqual(
