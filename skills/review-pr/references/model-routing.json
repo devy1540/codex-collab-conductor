@@ -1,0 +1,118 @@
+{
+  "schema_version": "review-pr-model-routing-v1",
+  "parent_policy": {
+    "preserve_parent_model": true,
+    "preserve_parent_reasoning_effort": true,
+    "description": "The parent keeps its selected model and owns scope, integration, acceptance, and the final response."
+  },
+  "workflow_roles": [
+    "recon",
+    "quality",
+    "security",
+    "contract_compatibility",
+    "data_migration",
+    "operations_release",
+    "ui_product_contract",
+    "challenge",
+    "synthesis"
+  ],
+  "routes": {
+    "recon": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "low"
+    },
+    "quality": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "security": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "contract_compatibility": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "data_migration": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "operations_release": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "ui_product_contract": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "challenge": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "synthesis": {
+      "model": "gpt-5.6-terra",
+      "reasoning_effort": "high"
+    },
+    "frontier": {
+      "model": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "max_spawns_per_review": 1,
+      "evidence_packet_required_fields": [
+        "matched_trigger_id",
+        "findings",
+        "challenge_state"
+      ],
+      "required_triggers": [
+        {
+          "id": "high_security_boundary",
+          "severity": "high",
+          "requires_file_line": true,
+          "finding_categories": [
+            "authorization",
+            "cryptography",
+            "sandbox",
+            "supply_chain"
+          ],
+          "challenge_states": [
+            "keep",
+            "unresolved"
+          ],
+          "requires_conflicting_reviews": false
+        },
+        {
+          "id": "high_concurrency_or_irreversible_migration",
+          "severity": "high",
+          "requires_file_line": true,
+          "finding_categories": [
+            "concurrency",
+            "conflict_resolution",
+            "irreversible_migration"
+          ],
+          "challenge_states": [
+            "keep",
+            "unresolved"
+          ],
+          "requires_conflicting_reviews": false
+        },
+        {
+          "id": "unresolved_high_architecture_or_security_dispute",
+          "severity": "high",
+          "requires_file_line": true,
+          "finding_categories": [
+            "architecture",
+            "security"
+          ],
+          "challenge_states": [
+            "unresolved"
+          ],
+          "requires_conflicting_reviews": true
+        }
+      ]
+    }
+  },
+  "fallback_policy": {
+    "inherit_parent": false,
+    "silent_cross_model_fallback": false,
+    "model_unavailable": "stop_and_report_not_verified"
+  }
+}

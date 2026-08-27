@@ -9,6 +9,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILLS_ROOT = REPO_ROOT / "skills"
 SKILL_ROOT = SKILLS_ROOT / "codex-collab-conductor"
+REVIEW_SKILL_ROOT = SKILLS_ROOT / "review-pr"
 MANIFEST_PATH = REPO_ROOT / ".codex-plugin" / "plugin.json"
 
 
@@ -31,10 +32,10 @@ class PluginContractTests(unittest.TestCase):
             },
         )
         self.assertEqual(manifest["name"], "codex-collab-conductor")
-        self.assertEqual(manifest["version"], "0.2.0")
+        self.assertEqual(manifest["version"], "0.3.0")
         self.assertEqual(
             manifest["description"],
-            "Conservative native collaboration for bounded Codex tasks.",
+            "Conservative native collaboration and evidence-first PR review for Codex.",
         )
         self.assertEqual(manifest["author"], {"name": "devy1540"})
         self.assertEqual(
@@ -51,16 +52,17 @@ class PluginContractTests(unittest.TestCase):
             manifest["interface"],
             {
                 "displayName": "Codex Collab Conductor",
-                "shortDescription": "Conservative native collaboration for bounded tasks.",
+                "shortDescription": "Native collaboration and evidence-first PR review.",
                 "longDescription": (
-                    "Routes independent work to bounded native agents while keeping scope, "
-                    "integration, and acceptance ownership with the parent task."
+                    "Routes bounded native agents and provides read-only multi-agent PR review "
+                    "while keeping integration and acceptance with the parent task."
                 ),
                 "developerName": "devy1540",
                 "category": "Productivity",
                 "capabilities": ["Interactive"],
                 "defaultPrompt": [
-                    "Route independent work to bounded native agents."
+                    "Route independent work to bounded native agents.",
+                    "Review this exact PR or branch diff without editing.",
                 ],
             },
         )
@@ -70,12 +72,15 @@ class PluginContractTests(unittest.TestCase):
         for forbidden in ("mcpServers", "apps", "hooks", "assets"):
             self.assertNotIn(forbidden, manifest["interface"])
 
-    def test_plugin_contains_exactly_one_nested_skill(self) -> None:
+    def test_plugin_contains_two_nested_skills(self) -> None:
         self.assertTrue(SKILLS_ROOT.is_dir())
         skill_dirs = sorted(
             path for path in SKILLS_ROOT.iterdir() if path.is_dir() and not path.name.startswith(".")
         )
-        self.assertEqual([path.name for path in skill_dirs], ["codex-collab-conductor"])
+        self.assertEqual(
+            [path.name for path in skill_dirs],
+            ["codex-collab-conductor", "review-pr"],
+        )
 
     def test_nested_skill_and_resources_exist_without_root_duplicates(self) -> None:
         required_files = [
@@ -97,6 +102,24 @@ class PluginContractTests(unittest.TestCase):
         ]
         for relative in required_files:
             self.assertTrue((SKILL_ROOT / relative).is_file(), relative)
+
+        review_required_files = [
+            "SKILL.md",
+            "agents/openai.yaml",
+            "references/model-routing.json",
+            "references/review-standards.md",
+            "references/reviewer-roles.md",
+            "references/risk-routing.md",
+            "scripts/prepare_review.py",
+            "tests/test_model_routing.py",
+            "tests/test_prepare_review.py",
+        ]
+        for relative in review_required_files:
+            self.assertTrue((REVIEW_SKILL_ROOT / relative).is_file(), relative)
+        self.assertNotIn(
+            "~/.codex/skills/review-pr",
+            (REVIEW_SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8"),
+        )
 
     def test_root_compatibility_symlinks_and_install_docs(self) -> None:
         compatibility_links = {
@@ -126,6 +149,7 @@ class PluginContractTests(unittest.TestCase):
             readme,
         )
         self.assertIn('test -f "$TARGET_DIR/SKILL.md"', readme)
+        self.assertIn("skills/review-pr/", readme)
 
     def test_public_marketplace_contract(self) -> None:
         marketplace_path = REPO_ROOT / ".agents/plugins/marketplace.json"
@@ -145,7 +169,7 @@ class PluginContractTests(unittest.TestCase):
             {
                 "source": "url",
                 "url": "https://github.com/devy1540/codex-collab-conductor.git",
-                "ref": "v0.2.0",
+                "ref": "v0.3.0",
             },
         )
         self.assertEqual(

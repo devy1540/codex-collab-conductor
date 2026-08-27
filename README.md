@@ -1,10 +1,14 @@
 # Codex Collaboration Conductor
 
-Codex Collaboration Conductor (CCC) is one conservative, implicit Codex skill for
+Codex Collaboration Conductor (CCC) is a conservative, implicit Codex skill for
 deciding when native subagents are justified by the task shape. The parent keeps scope,
 integration, verification, and final acceptance ownership. CCC is not a scheduler or
 orchestration service, and it makes no promise of faster execution, task correctness, or
 independent assurance.
+
+The same plugin also bundles `review-pr`, an evidence-first, read-only workflow for PR,
+branch-diff, and working-tree review. It gives every reviewer role an explicit model and
+reasoning effort while preserving the parent model and final acceptance boundary.
 
 ## What it provides
 
@@ -17,8 +21,10 @@ independent assurance.
   [`skills/codex-collab-conductor/references/model-lanes.md`](skills/codex-collab-conductor/references/model-lanes.md).
 - Optional privacy-safe runtime diagnostics for high-risk routing and fallback
   troubleshooting.
+- Evidence-first multi-agent PR review with explicit Terra routes for ordinary reviewers
+  and one evidence-gated Sol/high frontier route.
 
-The repository is both a Codex plugin root and one bundled skill. The plugin adds no MCP
+The repository is both a Codex plugin root and two bundled skills. The plugin adds no MCP
 server, app, hook, daemon, tmux runtime, custom scheduler, or receipt schema v2.
 
 ## Repository layout
@@ -29,11 +35,13 @@ The root contains the plugin manifest and public project files:
 - `README.md`, `LICENSE`, `NOTICE.md`, `.github/`, and `tests/`
 
 The root `SKILL.md`, `agents/`, `references/`, `scripts/`, and `evals/` entries are
-tracked compatibility symlinks to the one canonical nested skill. They are not duplicate
-skill bundles; the plugin manifest continues to package only `./skills/`.
+tracked compatibility symlinks to the canonical CCC skill for the historical standalone
+install path. They do not duplicate or expose `review-pr`; the plugin manifest packages
+both nested skills from `./skills/`.
 
-The one actual skill and all of its supporting resources are bundled under
-`skills/codex-collab-conductor/`:
+The two bundled skills are:
+
+### `skills/codex-collab-conductor/`
 
 - `skills/codex-collab-conductor/SKILL.md`: the skill entrypoint.
 - `skills/codex-collab-conductor/agents/openai.yaml`: Codex UI metadata and implicit
@@ -59,6 +67,16 @@ The one actual skill and all of its supporting resources are bundled under
 - `tests/`: standard-library regression tests for policy structure and diagnostic
   boundaries.
 
+### `skills/review-pr/`
+
+- `skills/review-pr/SKILL.md`: evidence-first PR, branch, and working-tree review workflow.
+- `skills/review-pr/agents/openai.yaml`: review skill UI metadata.
+- `skills/review-pr/references/model-routing.json`: explicit reviewer model and effort
+  contract; ordinary roles use Terra and only evidence-gated frontier review uses Sol/high.
+- `skills/review-pr/references/`: reviewer prompts, standards, and risk routing.
+- `skills/review-pr/scripts/prepare_review.py`: deterministic review artifact materializer.
+- `skills/review-pr/tests/`: artifact and model-routing contract tests.
+
 ## Requirements
 
 - A current Codex host with native subagents enabled when a non-solo route is selected.
@@ -77,19 +95,22 @@ Add the public GitHub marketplace, verify the pinned plugin is available, and in
 
 The marketplace catalog is tracked at `.agents/plugins/marketplace.json`. It follows
 `main`, while the plugin source is pinned to the release tag that matches the manifest
-version. Start a new Codex task after installation so the bundled skill is loaded.
+version. The plugin install exposes both `codex-collab-conductor` and `review-pr`. Start a
+new Codex task after installation so both bundled skills are loaded.
 
 To pick up a later release, refresh the marketplace snapshot and reinstall the plugin:
 
     codex plugin marketplace upgrade devy1540
     codex plugin add codex-collab-conductor@devy1540
 
-### Standalone skill installation
+### Legacy standalone CCC installation
 
-The bundled skill remains compatible with the original direct-clone path. Existing clean
+The CCC skill remains compatible with the original direct-clone path. Existing clean
 standalone clones can update with an ordinary `git pull`; the root compatibility symlinks
 continue to expose `SKILL.md`, `agents/`, `references/`, `scripts/`, and `evals/` from the
-canonical nested skill. A fresh standalone install uses the same path:
+canonical CCC skill. This legacy path does not expose the bundled `review-pr`; use the
+plugin installation when both skills are required. A fresh standalone CCC install uses the
+same path:
 
     (
       set -eu
@@ -106,11 +127,18 @@ canonical nested skill. A fresh standalone install uses the same path:
 
 Restart Codex if the skill does not appear immediately.
 
+Do not keep a separate `review-pr` skill alongside the plugin after verifying a release
+install, because duplicate skill names can drift or make source selection ambiguous. Verify
+the plugin-cache copy first, then retire the standalone directory with a recoverable move.
+
 ## Automatic use
 
 `skills/codex-collab-conductor/agents/openai.yaml` enables implicit invocation. Codex may select this skill when the
 request matches the conservative policy, so users do not need to type the skill name on
 every task.
+
+`skills/review-pr/agents/openai.yaml` exposes the separate PR-review workflow. It remains
+review-only unless the user separately authorizes comments, fixes, commits, or pushes.
 
 One ordinary review, one investigation, and one localized edit remain outside CCC. An
 explicitly invoked or more specific workflow skill leads when it applies; CCC supports it
@@ -138,6 +166,11 @@ decision-complete packets, standard judgment is the explicit route for judgment-
 integration, debugging, and compatibility work, and frontier review is reserved for
 concrete high-risk judgment. The fast fallback is one fallback attempt, not a general
 retry budget. Do not infer or claim a resolved model without runtime evidence.
+
+`review-pr` owns its more specific review workflow. It reads
+`skills/review-pr/references/model-routing.json` before spawning: recon uses Terra/low,
+ordinary reviewers/challenge/synthesis use Terra/high, and Sol/high is capped to one
+frontier reviewer with structured high-severity evidence. The parent model is unchanged.
 
 ## Optional runtime diagnostics
 
@@ -206,6 +239,12 @@ Validate the skill package:
       "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" \
       skills/codex-collab-conductor
 
+Validate the review skill package:
+
+    uv run --no-project --with pyyaml python \
+      "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" \
+      skills/review-pr
+
 Validate the plugin root:
 
     uv run --no-project --with pyyaml python \
@@ -214,6 +253,7 @@ Validate the plugin root:
 Run repository tests:
 
     PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
+    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s skills/review-pr/tests -v
 
 Validate committed canary results against their Draft 2020-12 schema:
 

@@ -1,7 +1,7 @@
 {
   "name": "codex-collab-conductor",
-  "version": "0.2.0",
-  "description": "Conservative native collaboration for bounded Codex tasks.",
+  "version": "0.3.0",
+  "description": "Conservative native collaboration and evidence-first PR review for Codex.",
   "author": {
     "name": "devy1540"
   },
@@ -11,15 +11,16 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Codex Collab Conductor",
-    "shortDescription": "Conservative native collaboration for bounded tasks.",
-    "longDescription": "Routes independent work to bounded native agents while keeping scope, integration, and acceptance ownership with the parent task.",
+    "shortDescription": "Native collaboration and evidence-first PR review.",
+    "longDescription": "Routes bounded native agents and provides read-only multi-agent PR review while keeping integration and acceptance with the parent task.",
     "developerName": "devy1540",
     "category": "Productivity",
     "capabilities": [
       "Interactive"
     ],
     "defaultPrompt": [
-      "Route independent work to bounded native agents."
+      "Route independent work to bounded native agents.",
+      "Review this exact PR or branch diff without editing."
     ]
   }
 }
